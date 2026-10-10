@@ -14,6 +14,10 @@ Usage (from the project root):
     # Extraction: a JSON file {"receipt_1.jpeg": {...ReceiptData fields, "warnings": [...]}, ...}
     python -m eval.run_eval extraction --name legacy --predictions eval/results/legacy_predictions.json
 
+    # Chat: the questions in eval/chat_questions.json against the ground-truth receipts (needs Ollama)
+    python -m eval.run_eval chat --name chat-v1
+    python -m eval.run_eval chat --name try --only q10 --only q25
+
 Each run prints a summary and saves a report to eval/results/.
 """
 
@@ -24,6 +28,7 @@ from datetime import datetime
 from pathlib import Path
 
 from app.config import get_settings
+from eval import chat_eval
 from eval.metrics import score_extraction, score_ocr, summarize_extraction, summarize_ocr
 
 
@@ -168,7 +173,7 @@ def print_report(report: dict) -> None:
         print(f"  [{set_name}] key fields {summary['key_field_accuracy']}, all fields {summary['all_field_accuracy']}, "
               f"item F1 {summary['item_f1']}, categories {summary['category_accuracy']}, "
               f"wrong totals unflagged {summary['wrong_totals_unflagged']}")
-    for image, result in report["receipts"].items():
+    for image, result in report.get("receipts", {}).items():
         if report["kind"] == "ocr":
             print(f"  {image}: CER {result['cer']:.1%}, words {result['token_recall']:.0%}, "
                   f"keys {result['key_values_found']}/{result['key_values_total']}"
@@ -203,13 +208,23 @@ def main(argv: list[str] | None = None) -> int:
     src.add_argument("--predictions", type=Path)
     src.add_argument("--pipeline", action="store_true", help="run the full pipeline now (needs Ollama)")
     ext.add_argument("--resume", action="store_true", help="with --pipeline: continue an interrupted run of --name")
+
+    chat = sub.add_parser("chat", help="score chat function choice and answers")
+    chat.add_argument("--name", required=True)
+    chat.add_argument("--only", action="append", help="only these question ids (q01 ...); repeatable")
     for p in (ocr, ext):
         p.add_argument("--set", action="append", dest="sets",
                        help="only these ground-truth sets (tuning, dev, test); repeatable")
 
     args = parser.parse_args(argv)
     truth = load_ground_truth()
-    if args.sets:
+    if args.kind == "chat":
+        report = {"kind": "chat", "name": args.name, "created": datetime.now().isoformat(timespec="seconds"),
+                  **chat_eval.run(truth, only=args.only)}
+        print_report(report)
+        print(f"\nReport saved: {save_report(args.kind, args.name, report)}")
+        return 0
+    if getattr(args, "sets", None):
         truth = {k: v for k, v in truth.items() if v.get("set") in args.sets}
     if not truth:
         print("No ground truth found.", file=sys.stderr)

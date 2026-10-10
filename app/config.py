@@ -66,6 +66,12 @@ class Settings(BaseSettings):
     sum_tolerance_abs: float = 0.05
     sum_tolerance_rel: float = 0.01
 
+    # Chat
+    chat_model: str | None = None  # None = extract_model
+    chat_timeout_s: float = 90.0
+    chat_history_turns: int = 3  # earlier questions sent along for follow-ups ("and in July?")
+    chat_rephrase: bool = False  # second LLM call to reword the template answer (~10-20 s more)
+
     # Uploads
     max_upload_mb: int = 15
 

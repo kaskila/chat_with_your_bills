@@ -11,8 +11,8 @@ One report per completed phase of the rebuild described in [docs/IMPLEMENTATION_
 | 4 | [VLM second pass and reconciliation](phase-4-vlm.md) | Done (after Phase 5) |
 | 5 | [FastAPI backend and job worker](phase-5-backend.md) | Done (built before Phase 4) |
 | 6 | [Frontend (HTML/CSS/JS)](phase-6-frontend.md) | Done |
-| 7 | Chat over the stored receipts | Next |
-| 8 | Hardening and performance | Planned |
+| 7 | [Chat over the stored receipts](phase-7-chat.md) | Done |
+| 8 | Hardening and performance | Next |
 | 9 | Clean-up and documentation | Planned |
 
 ## The system in one picture
@@ -43,8 +43,9 @@ Everything runs locally on the CPU of the target laptop (Intel i7-1355U, 16 GB R
 | --- | --- |
 | OCR character error rate (3 original photos) | Tesseract 34.7% → RapidOCR **6.6%** |
 | OCR key values found | Tesseract 18/32 → RapidOCR **32/32** |
-| All fields correct, dev set (Zambian receipts 01–10) | **99.2%** |
-| All fields correct, test set (Zambian receipts 11–20) | **97.5%** (key fields 100%, every item matched) |
+| All fields correct, dev set (Zambian receipts 01–10) | **100%** |
+| All fields correct, test set (Zambian receipts 11–20) | **100%** (every item matched) |
 | Wrong totals accepted without a warning | **0** on every set |
-| Time per receipt (on AC power) | median 76 s; ~100–180 s when the VLM re-reads; up to ~6 min for a 15-item receipt with the VLM |
-| Automated tests | 94 passing |
+| Time per receipt (on AC power) | median 53 s; ~100–180 s when the VLM re-reads; up to ~6 min for a 15-item receipt with the VLM |
+| Chat test questions (right function + arguments) | **32/32** (median 11 s per answer) |
+| Automated tests | 128 passing |

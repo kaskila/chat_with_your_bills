@@ -503,6 +503,8 @@ Changes from the plan: a timeout is no longer retried (on a slow CPU a retry onl
 
 **Done when:** ≥ 90% of the chat test questions pick the right function with the right arguments; answers match the database.
 
+**Result (2026-10-10): done.** 8 query functions with parameterized SQL; qwen3:4b picks one through a forced JSON schema (not the tool-calling API: guaranteed valid names); dates resolved in Python from the question's words; template answers, optional checked rewording. Chat test set: 32 questions, **32/32** right function + arguments and correct numbers (chat-v1 was 31/32), median 10.8 s. Chat page shows function, arguments, rows and time. Also done first: three validation fixes (calculated change, subtotal after discount, copied subtotal) → test and dev all fields 100%, median 53 s/receipt. Details: reports/phase-7-chat.md.
+
 ### Phase 8 — Hardening and performance
 
 **Tasks**

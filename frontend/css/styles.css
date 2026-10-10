@@ -237,3 +237,16 @@ table.edit td:first-child { min-width: 13rem; }
   .nav.open { display: flex; }
   .tile .value { font-size: 1.5rem; }
 }
+
+/* ---------- chat ---------- */
+.chat-log { display: flex; flex-direction: column; gap: 1rem; margin-bottom: 1rem; }
+.chat-turn { display: flex; flex-direction: column; gap: 0.5rem; }
+.chat-question { align-self: flex-end; max-width: min(80%, 40rem); background: var(--accent); color: #fff; padding: 0.55rem 0.85rem; border-radius: 14px 14px 4px 14px; overflow-wrap: anywhere; }
+.chat-answer { align-self: flex-start; width: min(100%, 52rem); background: var(--surface); border: 1px solid var(--border); border-radius: 14px 14px 14px 4px; padding: 0.75rem 0.9rem; box-shadow: var(--shadow); min-width: 0; }
+.chat-answer p { margin: 0 0 0.5rem; line-height: 1.5; }
+.chat-meta, .chat-args { display: flex; flex-wrap: wrap; gap: 0.35rem; align-items: center; }
+.chat-answer details { margin-top: 0.6rem; }
+.chat-answer summary { cursor: pointer; color: var(--text-2); margin-bottom: 0.4rem; }
+.chat-examples { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.chat-form { display: flex; gap: 0.5rem; position: sticky; bottom: 0.75rem; }
+.chat-form input { flex: 1; min-width: 0; }

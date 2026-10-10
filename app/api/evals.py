@@ -22,7 +22,7 @@ router = APIRouter(prefix="/api/eval", tags=["eval"])
 
 
 class EvalRequest(BaseModel):
-    kind: Literal["ocr", "extraction"] = "extraction"
+    kind: Literal["ocr", "extraction", "chat"] = "extraction"
     sets: list[Literal["tuning", "dev", "test"]] = ["test"]
     name: str | None = None
 
@@ -60,10 +60,11 @@ def run_eval(request: Request, body: EvalRequest) -> dict:
     if request.app.state.worker.current_job:
         raise HTTPException(409, "Receipts are being processed; run the evaluation when the queue is empty "
                                  "(both need the whole CPU).")
-    name = body.name or f"ui-{body.kind}-{'-'.join(body.sets)}-{datetime.now():%H%M}"
+    sets = [] if body.kind == "chat" else body.sets  # the chat questions use all ground-truth receipts
+    name = body.name or f"ui-{'-'.join([body.kind, *sets])}-{datetime.now():%H%M}"
     cmd = [sys.executable, "-m", "eval.run_eval", body.kind, "--name", name]
-    cmd += ["--rapid"] if body.kind == "ocr" else ["--pipeline"]
-    for s in body.sets:
+    cmd += {"ocr": ["--rapid"], "extraction": ["--pipeline"], "chat": []}[body.kind]
+    for s in sets:
         cmd += ["--set", s]
     process = subprocess.Popen(cmd, cwd=PROJECT_ROOT, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                                text=True, encoding="utf-8", errors="replace", env={**os.environ, "PYTHONIOENCODING": "utf-8"})

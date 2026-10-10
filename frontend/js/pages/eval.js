@@ -4,7 +4,8 @@ import { api } from "../api.js";
 import { clear, errorBox, h, pct, seconds, toast } from "../ui.js";
 
 export async function render(view) {
-  const kind = h("select", {}, h("option", { value: "extraction" }, "Full pipeline (extraction)"), h("option", { value: "ocr" }, "OCR only"));
+  const kind = h("select", {}, h("option", { value: "extraction" }, "Full pipeline (extraction)"), h("option", { value: "ocr" }, "OCR only"),
+    h("option", { value: "chat" }, "Chat questions"));
   const sets = ["tuning", "dev", "test"].map((name) =>
     h("label", { class: "row small" }, h("input", { type: "checkbox", value: name, checked: name === "test" }), name));
   const statusBox = h("div");
@@ -29,7 +30,8 @@ export async function render(view) {
     if (!chosen.length) { toast("Choose at least one set.", "error"); return; }
     try {
       await api.post("/api/eval/run", { kind: kind.value, sets: chosen });
-      toast("Evaluation started. Full-pipeline runs take about a minute per receipt.");
+      toast(kind.value === "chat" ? "Chat evaluation started: about 15 s per question."
+        : "Evaluation started. Full-pipeline runs take about a minute per receipt.");
       clearTimeout(timer);
       refreshStatus();
     } catch (error) { toast(error.message, "error"); }
@@ -40,7 +42,18 @@ export async function render(view) {
     try { rows = await api.get("/api/eval/results"); } catch (error) { clear(results, errorBox(error)); return; }
     const ext = rows.filter((r) => r.kind === "extraction");
     const ocr = rows.filter((r) => r.kind === "ocr");
+    const chat = rows.filter((r) => r.kind === "chat");
     clear(results,
+      h("div", { class: "card" }, h("h2", {}, "Chat reports"),
+        chat.length ? h("div", { class: "table-wrap" }, h("table", {},
+          h("thead", {}, h("tr", {}, ["Run", "When", "Questions", "Right function", "Right function + arguments", "Answers correct", "Median time"]
+            .map((t, i) => h("th", { class: i > 1 ? "num" : "" }, t)))),
+          h("tbody", {}, chat.map((r) => h("tr", { class: "clickable", onclick: () => showChatReport(r.file) },
+            h("td", {}, h("b", {}, r.name)), h("td", { class: "muted small" }, r.created?.replace("T", " ")),
+            h("td", { class: "num" }, r.summary.questions), h("td", { class: "num" }, pct(r.summary.function_accuracy)),
+            h("td", { class: "num" }, pct(r.summary.function_and_arguments_accuracy)),
+            h("td", { class: "num" }, r.summary.answers_correct), h("td", { class: "num" }, seconds(r.summary.seconds_median)))))))
+          : h("div", { class: "empty" }, "No chat reports yet.")),
       h("div", { class: "card" }, h("h2", {}, "Extraction reports"),
         ext.length ? h("div", { class: "table-wrap" }, h("table", {},
           h("thead", {}, h("tr", {}, ["Run", "When", "Receipts", "Key fields", "All fields", "Item F1", "Categories", "Wrong totals unflagged", "Median time"]
@@ -70,6 +83,22 @@ export async function render(view) {
             h("td", { class: "num" }, `${r.summary.key_values_found}/${r.summary.key_values_total}`),
             h("td", { class: "num" }, r.summary.seconds_per_receipt ?? "–")))))) : h("div", { class: "empty" }, "No OCR reports yet.")),
       h("div", { id: "report-detail" }));
+  }
+
+  async function showChatReport(file) {
+    const target = document.getElementById("report-detail");
+    clear(target, h("div", { class: "card" }, h("span", { class: "spinner" })));
+    let report;
+    try { report = await api.get(`/api/eval/results/${encodeURIComponent(file)}`); } catch (error) { clear(target, errorBox(error)); return; }
+    clear(target, h("div", { class: "card" }, h("h2", {}, `Per question: ${report.name}`),
+      h("div", { class: "table-wrap" }, h("table", {},
+        h("thead", {}, h("tr", {}, h("th", {}, "Question"), h("th", {}, "Function"), h("th", {}, "Problems"), h("th", { class: "num" }, "Time"))),
+        h("tbody", {}, Object.entries(report.questions).map(([id, q]) => h("tr", { class: q.problems.length ? "flagged" : "" },
+          h("td", {}, h("div", {}, h("b", {}, id), " ", q.question), h("div", { class: "muted small" }, q.answer)),
+          h("td", {}, q.tool),
+          h("td", { class: "small" }, q.problems.length ? q.problems.map((p) => h("div", {}, p)) : h("span", { class: "muted" }, "none")),
+          h("td", { class: "num" }, seconds(q.seconds)))))))));
+    target.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
   async function showReport(file) {
