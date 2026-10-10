@@ -15,6 +15,8 @@
 > ```
 > With `--lan`, Windows may ask once whether Python may accept connections on private networks: allow it. Use `--lan` only on a network you trust.
 >
+> **On your phone** (anywhere, as an installable app, through Tailscale): see [docs/PHONE_SETUP.md](docs/PHONE_SETUP.md). In short: Tailscale on the computer and phone with the same account, then `powershell -ExecutionPolicy Bypass -File scripts\phone-access.ps1` once, and open the address shown on the System page.
+>
 > Setup and command-line tools:
 >
 > ```powershell
