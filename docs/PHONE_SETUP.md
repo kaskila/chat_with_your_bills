@@ -58,6 +58,7 @@ On the computer, the app is always at **http://127.0.0.1:8000**.
 ## Everyday use
 
 - **Take a receipt photo:** Upload → **Take photo** (phone camera app) or **Use webcam** (live camera in the page). Lay the receipt flat, in good light, filling most of the picture.
+- Photos are made smaller on the phone before they are sent (a few hundred KB instead of several MB), so uploading is quick even on mobile data; this does not reduce accuracy.
 - Processing takes about a minute per receipt (longer when the vision model re-reads it). You can lock the phone: the computer keeps working, and the result is there when you come back (Upload or Receipts).
 - **Receipts** shows what was read; anything marked **Needs review** has a warning to check. **Dashboard** and **Chat** work as on the computer.
 - The phone and the computer show the same data: there is one database, on the computer.

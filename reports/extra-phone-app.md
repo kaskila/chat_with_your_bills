@@ -1,6 +1,6 @@
 # Extra — Using the app on the phone (in progress)
 
-**Status:** steps 1–3 of [docs/PHONE_PLAN.md](../docs/PHONE_PLAN.md) done (2026-10-10); step 4 (phone-first details) and step 5 (full real-phone test) to do. The user guide is [docs/PHONE_SETUP.md](../docs/PHONE_SETUP.md).
+**Status:** steps 1–4 of [docs/PHONE_PLAN.md](../docs/PHONE_PLAN.md) done (2026-10-10; step 4 waiting for the phone test); step 5 (full real-phone test) to do. The user guide is [docs/PHONE_SETUP.md](../docs/PHONE_SETUP.md).
 
 ## Goal
 
@@ -13,6 +13,7 @@ Use the app on the phone like a normal app, at home or on mobile data, while the
 | 1. One-click start | `scripts\install.ps1` (packages, Ollama and models, self-check, shortcuts; `-Autostart`, `-RemoveShortcuts`), `scripts\start.ps1` / `stop.ps1`, `python -m app.cli check`, `serve --log-file`, app icons | 29f4364 |
 | 2. Reach it from the phone | `scripts\phone-access.ps1` (Tailscale Serve), owner-only access for Tailscale requests, Funnel refused, address + QR code on the System page | 040edde, 927acf4 |
 | 3. Installable app | Web app manifest, icons (incl. maskable and Apple touch icon), service worker that keeps only the app's own files, "Install app" button, "cannot reach your computer" message | ffdb1da |
+| 4. Phone-first details | Shrink photos before upload (`frontend/js/resize.js`), upload progress line, bottom navigation on phones, larger touch targets, page widths fixed | (this commit) |
 
 ## How it works
 
@@ -46,14 +47,22 @@ Phone "Bills" app ──https──► Tailscale on the phone ══ encrypted t
 
 - Step 1: installer re-run on this laptop (all checks pass); start in 8 s; a second start does not start a second server; stop works. One bug found and fixed: output redirection made callers of `start.ps1` wait for the server; the server now writes its own log.
 - Step 2: tested by the user on a Pixel 6 over mobile data: app opened, receipt photographed and processed (verified). A bug found and fixed before that: all Tailscale requests were refused because of uvicorn's proxy headers (see above).
-- Step 3: in headless Chrome over the Tailscale address: no manifest or installability errors, service worker active, 20 files cached; with the network cut the app opens and shows "Cannot reach the app on your computer…". Installing on the real phone: waiting for the user's test.
+- Step 3: in headless Chrome over the Tailscale address: no manifest or installability errors, service worker active, 20 files cached; with the network cut the app opens and shows "Cannot reach the app on your computer…". Installed by the user on the Pixel 6.
+- Step 4, shrinking photos (full pipeline on the user's two real phone photos, 4080 × 3072):
+
+  | Photo | As uploaded | Shrunk to 2400 px (what the app now sends) | Re-saved at full size, not shrunk (control) |
+  | --- | --- | --- | --- |
+  | 27, printed shop receipt (K40.00) | 2690 KB, 162 s (VLM re-read), verified, total correct | 765 KB, 65 s, verified, total correct, "GOLDFN" | 2288 KB, 67 s, same result as shrunk |
+  | 26, faded handwritten laundry slip (true total K120) | 1314 KB, total 131 (wrong), needs review | 492 KB, total 6 (wrong), needs review | 1060 KB, other differences, needs review |
+
+  Shrinking changes the result no more than re-saving the same photo does: RapidOCR's line grouping is sensitive to any small pixel change, and the OCR never uses more than 1600 px. Receipt 26 is wrong and flagged in every version (handwriting is beyond the OCR). Only two real photos were available, so this is a sanity check, not a measurement; Step 5's real receipts will extend it.
 - 139 automated tests passing (access rules incl. Tailscale owner and Funnel, QR code, manifest and icons served, service-worker file list matches the real files and excludes the API).
 
 ## Still to do
 
-- Step 4: shrink photos on the phone before upload (with an accuracy re-check), bottom navigation and larger touch targets on phones.
+- Step 4: try the bottom bar, upload speed and the live camera on the real phone.
 - Step 5: full run-through on the phone; not yet tested from a fresh clone on another computer.
 
 ## Files
 
-`scripts\install.ps1`, `start.ps1`, `stop.ps1`, `phone-access.ps1`, `common.ps1`, `make_icons.py`, `app.ico`; `app/access.py`, `app/cli.py` (`check`, `serve --log-file`), `app/api/system.py`; `frontend/manifest.webmanifest`, `frontend/sw.js`, `frontend/icons/`, `frontend/index.html`, `frontend/js/app.js`, `frontend/js/pages/system.js`; `tests/test_access.py`, `tests/test_frontend.py`, `tests/conftest.py`; `docs/PHONE_PLAN.md`, `docs/PHONE_SETUP.md`.
+`scripts\install.ps1`, `start.ps1`, `stop.ps1`, `phone-access.ps1`, `common.ps1`, `make_icons.py`, `app.ico`; `app/access.py`, `app/cli.py` (`check`, `serve --log-file`), `app/api/system.py`; `frontend/manifest.webmanifest`, `frontend/sw.js`, `frontend/js/resize.js`, `frontend/icons/`, `frontend/index.html`, `frontend/js/app.js`, `frontend/js/pages/system.js`; `tests/test_access.py`, `tests/test_frontend.py`, `tests/conftest.py`; `docs/PHONE_PLAN.md`, `docs/PHONE_SETUP.md`.

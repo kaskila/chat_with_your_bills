@@ -54,7 +54,7 @@ Laptop: Tailscale ──► Chat With Your Bills (127.0.0.1:8000) ──► Olla
 
 **Done when:** "Add to Home Screen" (Android Chrome / iPhone Safari) gives an icon that opens full screen; with the laptop off it shows the friendly offline screen.
 
-**Status (2026-10-10): built, waiting for the phone test.** `frontend/manifest.webmanifest` (name, "Bills", standalone, icons incl. maskable, shortcuts Take photo / Chat / Dashboard), `frontend/sw.js` (caches only the app's own 20 files, network first with a 4 s timeout, never `/api/`), Apple touch icon and theme colours in `index.html`, an "Install app" button when the browser offers installing, and a phone-friendly "cannot reach the app on your computer" banner. Checked in headless Chrome over the Tailscale address: no manifest or installability errors, service worker active, 20 files cached, with the network cut the app still opens and shows the banner.
+**Status (2026-10-10): done; installed by the user on the Pixel 6.** `frontend/manifest.webmanifest` (name, "Bills", standalone, icons incl. maskable, shortcuts Take photo / Chat / Dashboard), `frontend/sw.js` (caches only the app's own 20 files, network first with a 4 s timeout, never `/api/`), Apple touch icon and theme colours in `index.html`, an "Install app" button when the browser offers installing, and a phone-friendly "cannot reach the app on your computer" banner. Checked in headless Chrome over the Tailscale address: no manifest or installability errors, service worker active, 20 files cached, with the network cut the app still opens and shows the banner.
 
 ### Step 4 — Phone-first details
 
@@ -65,6 +65,8 @@ Laptop: Tailscale ──► Chat With Your Bills (127.0.0.1:8000) ──► Olla
 - Optional, later: an offline queue (photos taken while the laptop is unreachable are kept on the phone and uploaded when it is back).
 
 **Done when:** a receipt photographed on mobile data uploads in a few seconds and its result appears in the app.
+
+**Status (2026-10-10): built, waiting for the phone test.** Photos over 2400 px are shrunk in the browser (JPEG 0.9, EXIF rotation applied) with a "Preparing / Uploading (size)" line: the Pixel 6's 4080 × 3072 photos go from 1.3–2.7 MB to 0.5–0.8 MB. Accuracy check on the two real phone photos (the 23 test images are all ≤ 1310 px, so resizing does not touch them): the differences after shrinking were the same kind as after re-saving the photo at full size without shrinking, i.e. OCR sensitivity to any pixel change, not lost detail (the OCR never uses more than 1600 px). Bottom navigation on phones (Upload, Receipts, Dashboard, Chat, More), 44 px touch targets on touch screens, every page checked at 390 px (the System page overflowed; fixed). Live camera on the phone works over https (not yet tried on the real phone). Notifications and the offline queue left for later.
 
 ### Step 5 — Test on your real phone, then document
 

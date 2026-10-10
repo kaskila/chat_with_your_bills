@@ -5,10 +5,10 @@
 // App files are fetched from the computer first (so updates show at once); the cached copy is
 // used only when the computer does not answer within a few seconds.
 
-const CACHE = "bills-app-v1";
+const CACHE = "bills-app-v2";
 const SHELL = [
   "/", "/index.html", "/manifest.webmanifest", "/css/styles.css",
-  "/js/app.js", "/js/api.js", "/js/ui.js", "/js/charts.js", "/js/jobs.js", "/js/camera.js",
+  "/js/app.js", "/js/api.js", "/js/ui.js", "/js/charts.js", "/js/jobs.js", "/js/camera.js", "/js/resize.js",
   "/js/pages/upload.js", "/js/pages/receipts.js", "/js/pages/receipt.js", "/js/pages/dashboard.js",
   "/js/pages/chat.js", "/js/pages/lab.js", "/js/pages/eval.js", "/js/pages/system.js",
   "/icons/icon-192.png", "/icons/icon-512.png",

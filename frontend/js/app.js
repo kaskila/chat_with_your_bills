@@ -29,10 +29,11 @@ async function route() {
 
   if (typeof cleanup === "function") cleanup();
   cleanup = null;
-  document.querySelectorAll(".nav a").forEach((a) => {
+  document.querySelectorAll(".nav a, .tabbar a").forEach((a) => {
     a.classList.toggle("active", a.dataset.route === (match.page === "receipt" ? "receipts" : match.page));
   });
   document.querySelector(".nav").classList.remove("open");
+  document.querySelector(".tab-more").setAttribute("aria-expanded", "false");
 
   clear(view, h("div", { class: "empty" }, h("span", { class: "spinner" })));
   try {
@@ -60,6 +61,14 @@ document.querySelector(".theme-toggle").addEventListener("click", () => {
   const next = dark ? "light" : "dark";
   applyTheme(next);
   remember("theme", next);
+});
+
+// Phones: "More" in the bottom bar opens the full page list at the top.
+document.querySelector(".tab-more").addEventListener("click", (event) => {
+  const nav = document.querySelector(".nav");
+  nav.classList.toggle("open");
+  event.currentTarget.setAttribute("aria-expanded", nav.classList.contains("open"));
+  if (nav.classList.contains("open")) window.scrollTo({ top: 0, behavior: "smooth" });
 });
 
 document.querySelector(".nav-toggle").addEventListener("click", (event) => {

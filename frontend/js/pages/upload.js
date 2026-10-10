@@ -3,7 +3,8 @@
 import { api } from "../api.js";
 import { webcamPanel, webcamSupported } from "../camera.js";
 import { jobCard } from "../jobs.js";
-import { clear, h, statusBadge, toast } from "../ui.js";
+import { shrinkPhoto } from "../resize.js";
+import { clear, h, spinner, statusBadge, toast } from "../ui.js";
 
 export async function render(view) {
   const cards = [];
@@ -29,14 +30,24 @@ export async function render(view) {
     webcamSupported() ? h("button", { type: "button", onclick: openWebcam }, "Use webcam") : null);
   cameraInput.addEventListener("change", () => { send([...cameraInput.files]); cameraInput.value = ""; });
 
+  const progress = h("div", { class: "upload-progress", hidden: true, "aria-live": "polite" });
+
   async function send(files) {
     if (!files.length) return;
     let results;
+    const plural = files.length > 1 ? `${files.length} photos` : "photo";
+    progress.hidden = false;
     try {
-      results = await api.upload("/api/receipts", files);
+      clear(progress, spinner(`Preparing ${plural}…`));
+      const small = await Promise.all(files.map(shrinkPhoto));
+      const kb = Math.round(small.reduce((sum, f) => sum + f.size, 0) / 1024);
+      clear(progress, spinner(`Uploading ${plural} (${kb >= 1024 ? `${(kb / 1024).toFixed(1)} MB` : `${kb} KB`})…`));
+      results = await api.upload("/api/receipts", small);
     } catch (error) {
       toast(error.message, "error");
       return;
+    } finally {
+      progress.hidden = true;
     }
     for (const r of results) {
       if (r.error) {
@@ -63,7 +74,7 @@ export async function render(view) {
   clear(view,
     h("div", { class: "page-head" }, h("div", {}, h("h1", {}, "Upload receipts"),
       h("div", { class: "muted" }, "Each photo is read (OCR), turned into data by the local model, and checked. Receipts that fail the checks are re-read by the vision model."))),
-    zone, input, cameraInput, sources.childElementCount ? sources : null, cameraSlot,
+    zone, input, cameraInput, sources.childElementCount ? sources : null, progress, cameraSlot,
     h("div", { style: "margin-top: 1rem" }, list));
 
   // Jobs still running from earlier (e.g. after navigating away).

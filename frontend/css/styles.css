@@ -267,3 +267,32 @@ table.edit td:first-child { min-width: 13rem; }
 .install-app { background: var(--accent); color: #fff; border: 1px solid var(--accent); border-radius: 7px; padding: 0.25rem 0.7rem; font: inherit; font-size: 0.9rem; cursor: pointer; white-space: nowrap; }
 .install-app[hidden] { display: none; }
 @media (max-width: 640px) { .install-app { order: 2; } }
+.upload-progress { margin-top: 0.75rem; }
+
+/* ---------- phones: bottom navigation, larger touch targets ---------- */
+.tabbar { display: none; }
+@media (max-width: 640px) {
+  .tabbar { display: grid; grid-template-columns: repeat(5, 1fr); position: fixed; left: 0; right: 0; bottom: 0; z-index: 20;
+    background: var(--surface); border-top: 1px solid var(--border); padding-bottom: env(safe-area-inset-bottom); }
+  .tabbar a, .tabbar button { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.15rem;
+    min-height: 56px; padding: 0.35rem 0; font: inherit; font-size: 0.7rem; color: var(--text-2); text-decoration: none;
+    background: none; border: 0; cursor: pointer; }
+  .tabbar svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linejoin: round; stroke-linecap: round; }
+  .tabbar .tab-more svg { fill: currentColor; stroke: none; }
+  .tabbar a.active { color: var(--accent); font-weight: 600; }
+  .nav-toggle { display: none; }
+  .theme-toggle { margin-left: auto; }
+  main { padding-bottom: calc(5rem + env(safe-area-inset-bottom)); }
+  .chat-form { bottom: calc(64px + env(safe-area-inset-bottom)); }
+  .toasts { bottom: calc(72px + env(safe-area-inset-bottom)); }
+}
+@media (pointer: coarse) {
+  button, .btn, select, input:not([type="checkbox"]):not([type="radio"]) { min-height: 44px; }
+  button.small, .btn.small { min-height: 38px; }
+  .nav a { padding: 0.6rem 0.8rem; }
+}
+.kv dd { overflow-wrap: anywhere; min-width: 0; }
+@media (max-width: 640px) {
+  /* These four are in the bottom bar; "More" lists the rest. */
+  .nav a[data-route="upload"], .nav a[data-route="receipts"], .nav a[data-route="dashboard"], .nav a[data-route="chat"] { display: none; }
+}
