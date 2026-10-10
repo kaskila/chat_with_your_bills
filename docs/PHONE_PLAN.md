@@ -54,6 +54,8 @@ Laptop: Tailscale ──► Chat With Your Bills (127.0.0.1:8000) ──► Olla
 
 **Done when:** "Add to Home Screen" (Android Chrome / iPhone Safari) gives an icon that opens full screen; with the laptop off it shows the friendly offline screen.
 
+**Status (2026-10-10): built, waiting for the phone test.** `frontend/manifest.webmanifest` (name, "Bills", standalone, icons incl. maskable, shortcuts Take photo / Chat / Dashboard), `frontend/sw.js` (caches only the app's own 20 files, network first with a 4 s timeout, never `/api/`), Apple touch icon and theme colours in `index.html`, an "Install app" button when the browser offers installing, and a phone-friendly "cannot reach the app on your computer" banner. Checked in headless Chrome over the Tailscale address: no manifest or installability errors, service worker active, 20 files cached, with the network cut the app still opens and shows the banner.
+
 ### Step 4 — Phone-first details
 
 - **Shrink photos on the phone before upload** (longest side ~2400 px, JPEG 0.9): a 12-megapixel photo goes from ~5 MB to under 1 MB, much faster on mobile data. The pipeline never uses more than 1600 px for OCR, so accuracy should not change; this will be checked by re-running the evaluation on resized test receipts.

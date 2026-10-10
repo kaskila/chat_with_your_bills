@@ -5,6 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Chat With Your Bills</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect x='6' y='3' width='20' height='26' rx='3' fill='%232a78d6'/><rect x='10' y='9' width='12' height='2' fill='white'/><rect x='10' y='14' width='12' height='2' fill='white'/><rect x='10' y='19' width='8' height='2' fill='white'/></svg>">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <meta name="theme-color" content="#fcfcfb" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#1a1a19" media="(prefers-color-scheme: dark)">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Bills">
+  <meta name="description" content="Photograph receipts; see and ask about your spending. Runs on your own computer.">
   <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
@@ -23,6 +30,7 @@
       <a href="#/eval" data-route="eval">Evaluation</a>
       <a href="#/system" data-route="system">System <span class="health-dot" title="Checking…"></span></a>
     </nav>
+    <button class="install-app" hidden>Install app</button>
     <button class="theme-toggle" aria-label="Toggle dark mode" title="Toggle dark mode">◐</button>
   </header>
   <div id="banner" class="banner" hidden></div>

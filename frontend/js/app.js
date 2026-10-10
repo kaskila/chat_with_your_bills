@@ -86,9 +86,35 @@ async function checkHealth() {
   } catch {
     dot.className = "health-dot bad";
     banner.hidden = false;
-    banner.textContent = "Cannot reach the server. Start it with: python -m uvicorn app.main:app";
+    banner.textContent = "Cannot reach the app on your computer. Check that the computer is on and awake, "
+      + "the app is running (Desktop shortcut), and on a phone that Tailscale is on.";
   }
 }
+
+// ---------------------------------------------------------------- installable app
+
+// The service worker keeps a copy of the app (not of any data) so it opens even when the
+// computer is off. Browsers allow it on https and on this computer only.
+if ("serviceWorker" in navigator && window.isSecureContext) {
+  navigator.serviceWorker.register("/sw.js").catch((error) => console.warn("Service worker:", error));
+}
+
+// Chrome/Edge (Android and desktop) offer installing; show our own button for it.
+let installPrompt = null;
+const installButton = document.querySelector(".install-app");
+window.addEventListener("beforeinstallprompt", (event) => {
+  event.preventDefault();
+  installPrompt = event;
+  installButton.hidden = false;
+});
+installButton.addEventListener("click", async () => {
+  if (!installPrompt) return;
+  installPrompt.prompt();
+  await installPrompt.userChoice;
+  installPrompt = null;
+  installButton.hidden = true;
+});
+window.addEventListener("appinstalled", () => { installButton.hidden = true; });
 
 window.addEventListener("hashchange", route);
 route();

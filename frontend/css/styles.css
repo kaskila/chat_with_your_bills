@@ -262,3 +262,8 @@ table.edit td:first-child { min-width: 13rem; }
 .phone-access { display: flex; gap: 1rem; align-items: flex-start; flex-wrap: wrap; }
 .phone-access .qr { background: #fff; border-radius: 8px; flex: none; }
 .phone-access code { overflow-wrap: anywhere; }
+
+/* ---------- installable app ---------- */
+.install-app { background: var(--accent); color: #fff; border: 1px solid var(--accent); border-radius: 7px; padding: 0.25rem 0.7rem; font: inherit; font-size: 0.9rem; cursor: pointer; white-space: nowrap; }
+.install-app[hidden] { display: none; }
+@media (max-width: 640px) { .install-app { order: 2; } }
