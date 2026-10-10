@@ -10,7 +10,9 @@ import threading
 import uuid
 from pathlib import Path
 
-from app import ingest
+import time
+
+from app import ingest, logs
 from app.db import repo
 from app.db.database import connect
 from app.config import get_settings
@@ -98,8 +100,10 @@ class Worker:
         if job is None:
             return False
         self.current_job = job["id"]
+        started = time.perf_counter()
         if not self._ollama_ready(conn, job):
             self.current_job = None
+            self._record(conn, job, started)
             return True
 
         def on_stage(stage: str) -> None:
@@ -121,4 +125,27 @@ class Worker:
                 repo.finish_job(conn, job["id"], failed=False)
         finally:
             self.current_job = None
+        self._record(conn, job, started)
         return True
+
+    def _record(self, conn, job: dict, started: float) -> None:
+        """One line in app.log and receipts.jsonl per processed receipt."""
+        record = repo.get_receipt(conn, job["receipt_id"]) or {}  # JSON columns already parsed
+        timings = (record.get("timings") or {}) if record.get("status") != "failed" else {}
+        warnings = [w.get("code") for w in record.get("warnings") or []]
+        seconds = round(time.perf_counter() - started, 1)
+        vlm = "vlm_s" in timings
+        if record.get("status") == "failed":
+            log.warning("Receipt #%s failed after %.0f s: %s", job["receipt_id"], seconds, record.get("error"))
+        else:
+            log.info("Receipt #%s %s in %.0f s (ocr %.1f s, extract %.0f s%s)%s", job["receipt_id"],
+                     record.get("status"), seconds, timings.get("ocr_s", 0), timings.get("extract_s", 0),
+                     f", vlm {timings.get('vlm_s', 0):.0f} s + {timings.get('extract2_s', 0):.0f} s" if vlm else "",
+                     f" warnings {warnings}" if warnings else "")
+        logs.record_receipt({
+            "receipt_id": job["receipt_id"], "job_id": job["id"], "file": record.get("original_filename"),
+            "status": record.get("status"), "error": record.get("error"), "warnings": warnings,
+            "vendor": record.get("vendor"), "total": record.get("total"), "seconds": seconds,
+            "timings": timings, "models": (record.get("models") or {}) if timings else {},
+            "force_vlm": bool(job.get("force_vlm")),
+        })

@@ -5,6 +5,16 @@ from app.llm import client as llm
 
 
 @pytest.fixture(autouse=True)
+def logs_in_tmp(tmp_path, monkeypatch):
+    """Log files written during tests go to a temporary folder, never data/logs."""
+    from app.config import get_settings
+    monkeypatch.setenv("BILLS_LOG_DIR", str(tmp_path / "logs"))
+    get_settings.cache_clear()
+    yield
+    get_settings.cache_clear()
+
+
+@pytest.fixture(autouse=True)
 def ollama_answers(monkeypatch):
     """Tests never contact or start a real Ollama: it "answers" unless a test says otherwise."""
     monkeypatch.setattr(llm, "ollama_reachable", lambda timeout=3.0: True)

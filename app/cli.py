@@ -253,6 +253,8 @@ def cmd_serve(args: argparse.Namespace) -> int:
     if args.log_file:
         # Started in the background (scripts/start.ps1): all output goes to the log file.
         args.log_file.parent.mkdir(parents=True, exist_ok=True)
+        from app.logs import rotate_if_large
+        rotate_if_large(args.log_file)
         log = open(args.log_file, "a", encoding="utf-8", buffering=1)  # noqa: SIM115 - open while serving
         sys.stdout = sys.stderr = log
 

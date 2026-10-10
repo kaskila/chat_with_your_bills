@@ -11,7 +11,7 @@ from pathlib import Path
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
-from app import access
+from app import access, logs
 from app.api import chat, evals, jobs, lab, receipts, stats, system
 from app.config import PROJECT_ROOT, get_settings
 from app.db import repo
@@ -26,6 +26,8 @@ def create_app(*, db_path: Path | str | None = None, start_worker: bool = True, 
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
+        if start_worker:  # the real server (tests run without the worker and without log files)
+            logs.setup()
         conn = connect(app.state.db_path)
         recovered = repo.recover_interrupted_jobs(conn)
         conn.close()

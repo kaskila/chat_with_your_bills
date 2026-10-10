@@ -27,6 +27,7 @@ class Settings(BaseSettings):
     samples_dir: Path = PROJECT_ROOT / "samples"
     ground_truth_dir: Path = PROJECT_ROOT / "eval" / "ground_truth"
     eval_results_dir: Path = PROJECT_ROOT / "eval" / "results"
+    log_dir: Path = PROJECT_ROOT / "data" / "logs"
 
     # Ollama
     ollama_host: str = "http://localhost:11434"

@@ -101,3 +101,33 @@ def test_worker_loop_survives_errors(tmp_path, monkeypatch):
     assert worker.alive and len(attempts) >= 3
     worker.stop()
     assert not any(t.name == "receipt-worker" and t.is_alive() for t in threading.enumerate())
+
+
+def test_each_processed_receipt_is_logged(api, monkeypatch):
+    import json
+
+    from app.config import get_settings
+
+    monkeypatch.setattr(ingest, "process_image", lambda *a, **k: fake_result())
+    upload(api, ("a.jpg", jpeg(1)))
+    run_worker(api)
+    monkeypatch.setattr(ingest, "process_image", lambda *a, **k: (_ for _ in ()).throw(LLMError("down")))
+    upload(api, ("b.jpg", jpeg(2)))
+    run_worker(api)
+    lines = [json.loads(line) for line in
+             (get_settings().log_dir / "receipts.jsonl").read_text(encoding="utf-8").splitlines()]
+    assert [(e["file"], e["status"]) for e in lines] == [("a.jpg", "verified"), ("b.jpg", "failed")]
+    assert lines[0]["timings"] == {"total_s": 1.0} and lines[1]["error"] == "down"
+
+
+def test_routine_polling_is_not_logged():
+    import logging
+
+    from app.logs import _SkipRoutine
+
+    keep = _SkipRoutine().filter
+    record = lambda msg: logging.LogRecord("uvicorn.access", 20, "", 0, msg, None, None)  # noqa: E731
+    assert not keep(record('127.0.0.1:1 - "GET /api/jobs/abc123 HTTP/1.1" 200'))
+    assert not keep(record('127.0.0.1:1 - "GET /api/system/health HTTP/1.1" 200'))
+    assert keep(record('127.0.0.1:1 - "POST /api/receipts HTTP/1.1" 200'))
+    assert keep(record('127.0.0.1:1 - "GET /api/system/health HTTP/1.1" 500'))

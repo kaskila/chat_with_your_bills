@@ -88,7 +88,7 @@ The phone can only use the app while the computer is **on, awake, and running th
 | The address worked before but not after a reinstall of Tailscale | Run `scripts\phone-access.ps1` again. |
 | No **Install app** button | Use the browser menu (Android: ⋮ → Install app; iPhone: Share → Add to Home Screen). It only works on the https address, not on the Wi-Fi link. |
 | A receipt takes very long | Check the computer is plugged in. Receipts with many items, or that need the second reading, take several minutes. |
-| Something else | On the computer: System page (what is ready and what is not), `python -m app.cli check`, and the log `data\logs\server.log`. |
+| Something else | On the computer: System page (what is ready and what is not), `python -m app.cli check`, and the logs in `data\logs` (`app.log`: one line per receipt and any errors). |
 
 ## Turning it off
 

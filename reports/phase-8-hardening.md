@@ -1,6 +1,6 @@
 # Phase 8 — Hardening and performance (in progress)
 
-**Status:** part 1 (failures) done 2026-10-10; logging, export/backup, performance tuning and a real-receipt test set to follow.
+**Status:** parts 1 (failures) and 2 (logs) done 2026-10-10; export/backup, performance tuning and a real-receipt test set to follow.
 
 ## Goal
 
@@ -45,3 +45,29 @@ No job stayed in "processing" in any case. 146 automated tests passing.
 ### Files
 
 `app/llm/client.py`, `app/worker.py`, `app/config.py` (`start_ollama`), `app/api/receipts.py`, `frontend/js/pages/receipts.js`, `tests/test_failures.py`, `tests/conftest.py`.
+
+## Part 2 — Logs
+
+### What was done
+
+All in `data/logs` (setting `BILLS_LOG_DIR`), written by the running app only (tests write to a temporary folder):
+
+| File | Contents | Size limit |
+| --- | --- | --- |
+| `app.log` | The app's own messages: one line per processed receipt, failures, worker errors, interrupted jobs at start-up | 5 MB, 3 old copies |
+| `receipts.jsonl` | One JSON line per processed receipt: receipt and job id, file name, status, error, warning codes, vendor, total, seconds, seconds per stage, models, forced VLM | previous copy kept at 10 MB |
+| `server.log` | Web server output (from the desktop shortcut) without the routine polling requests (job progress, health, evaluation status every few seconds) | previous copy kept at 10 MB (checked at start) |
+
+Example `app.log` line: `Receipt #1 verified in 42 s (ocr 2.4 s, extract 38 s)`; with a second reading also `vlm … + …`; failures: `Receipt #7 failed after 4 s: Ollama is not running …`.
+
+### How it works
+
+`app/logs.py`: `setup()` (called when the server starts) adds a rotating file handler and a console handler to the `bills` logger and a filter on `uvicorn.access` that drops successful polling requests; `record_receipt()` appends to `receipts.jsonl` and never raises. The worker writes both after every job, including jobs that failed before the pipeline ran (Ollama not available).
+
+### Results
+
+Live, on the separate test copy: one receipt (11_quickride_taxi) gave the expected `app.log` line and `receipts.jsonl` entry; `server.log` contained the upload but none of the 20+ polling requests. Two new tests (receipt log entries for a verified and a failed receipt; polling filter keeps errors and uploads). 148 automated tests passing.
+
+### Files
+
+`app/logs.py`, `app/worker.py`, `app/main.py`, `app/cli.py`, `app/config.py` (`log_dir`), `tests/test_failures.py`, `tests/conftest.py`.

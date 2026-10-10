@@ -14,7 +14,7 @@ One report per completed phase of the rebuild described in [docs/IMPLEMENTATION_
 | 7 | [Chat over the stored receipts](phase-7-chat.md) | Done |
 | + | [Camera capture (phone and webcam)](extra-camera-capture.md) | Done (added on request) |
 | + | [Using the app on the phone](extra-phone-app.md) (plan: [PHONE_PLAN](../docs/PHONE_PLAN.md), guide: [PHONE_SETUP](../docs/PHONE_SETUP.md)) | Done |
-| 8 | [Hardening and performance](phase-8-hardening.md) | In progress (failures done) |
+| 8 | [Hardening and performance](phase-8-hardening.md) | In progress (failures, logs done) |
 | 9 | Clean-up and documentation | Planned |
 
 ## The system in one picture
@@ -50,4 +50,4 @@ Everything runs locally on the CPU of the target laptop (Intel i7-1355U, 16 GB R
 | Wrong totals accepted without a warning | **0** on every set |
 | Time per receipt (on AC power) | median 53 s; ~100–180 s when the VLM re-reads; up to ~6 min for a 15-item receipt with the VLM |
 | Chat test questions (right function + arguments) | **32/32** (median 11 s per answer) |
-| Automated tests | 146 passing |
+| Automated tests | 148 passing |
