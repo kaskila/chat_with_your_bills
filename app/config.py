@@ -35,7 +35,7 @@ class Settings(BaseSettings):
     vlm_model: str = "glm-ocr"
     keep_alive: str = "30m"
     num_ctx: int = 4096
-    num_thread: int | None = None  # None = let Ollama decide
+    num_thread: int | None = None  # None = all physical CPU cores (measured fastest; Ollama's own default used fewer)
     extract_timeout_s: float = 180.0
     vlm_timeout_s: float = 240.0
     llm_retries: int = 1

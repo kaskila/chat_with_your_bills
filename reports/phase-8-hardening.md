@@ -1,6 +1,6 @@
 # Phase 8 — Hardening and performance (in progress)
 
-**Status:** parts 1 (failures), 2 (logs) and 3 (export and backup) done 2026-10-10; performance tuning and a real-receipt test set to follow.
+**Status:** parts 1–4 (failures, logs, export and backup, speed) and the part 5 tool done 2026-10-10; the evaluation on real receipts waits for the user's saved test cases.
 
 ## Goal
 
@@ -98,6 +98,51 @@ On the real data through the Tailscale address: receipts.csv 29 rows (4 KB), ite
 ### Files
 
 `app/export.py`, `app/api/export.py`, `app/cli.py` (`backup`, `restore`), `app/db/repo.py` (`find_duplicates`), `frontend/js/pages/system.js`, `frontend/css/styles.css`, `tests/test_export.py`, `tests/test_db.py`.
+
+## Part 4 — Speed: CPU threads
+
+### What was measured
+
+Where the time goes (23-receipt evaluation): extraction is ~90% of a typical receipt, and of that the model *writing* its JSON answer (~300 tokens at ~6 tokens/s, ~48 s) dominates reading the prompt (~6 s). Writing speed depends on how many CPU threads Ollama uses. The i7-1355U has 2 performance + 8 efficiency cores (12 threads); **Ollama's own default used 6 threads**.
+
+1. **Extraction alone, same OCR text, 3 receipts (small, medium, 15 items), one setting after another:**
+
+   | Threads | Writing speed (tokens/s) |
+   | --- | --- |
+   | 4 | 5.37 |
+   | 6 (Ollama default) | 5.60–5.80 |
+   | 8 | 6.20 |
+   | **10** (= physical cores) | **6.40** |
+   | 12 | 5.93 |
+
+   Also tried: asking for compact JSON (27% of the answer is spaces and line breaks). No effect: the model kept indenting (same 2,656 characters, same tokens), so it was dropped.
+
+2. **Accuracy with 10 threads** (thread count changes rounding, so answers can change): full evaluation `phase8-threads10`: test and dev 100% of fields, every item matched, 0 wrong totals unflagged, item details 94.1% (was 92.7%), median 53.0 s. Identical accuracy.
+
+3. **Fair speed comparison, full pipeline, alternating 6 / 10 / 6 / 10 threads on the same three receipts** (the evaluation's median could not show the gain: the laptop had been under load for hours, so runs at different times are not comparable):
+
+   | | 6 threads | 10 threads |
+   | --- | --- | --- |
+   | Writing speed | 6.22 tokens/s | **6.70 tokens/s (+8%)** |
+   | Extraction, mean | 72.7 s | **66.0 s (−9%)** |
+   | Whole receipt, mean | 75.0 s | **68.2 s (−9%)** |
+   | OCR | 2.3 s | 2.2 s |
+
+   10 threads won every pair in both rounds; the two rounds agreed to within 0.5 s.
+
+### What was done
+
+`app/llm/client.py`: `physical_cores()` (Windows: `Win32_Processor.NumberOfCores`; macOS: `hw.physicalcpu`; Linux: `/proc/cpuinfo`), used as `num_thread` for every model call unless `BILLS_NUM_THREAD` is set. Confirmed in Ollama's log after restarting the app: `llama threadpool init, n_threads = 10`.
+
+### Not changed, and why
+
+- `num_ctx` 4096: prompts are ~1,000 tokens plus ~300–900 output; on CPU the cost follows the tokens actually used, not the context size.
+- Both models stay loaded at once already (`ollama ps` shows qwen3:4b and glm-ocr together; 16 GB is enough), so no `OLLAMA_MAX_LOADED_MODELS` change is needed.
+- RapidOCR model size: OCR is 2–3 s of a ~55 s receipt; a larger OCR model would cost time for little gain (Phase 1 already compared variants).
+
+### Files
+
+`app/llm/client.py`, `app/config.py`, `.env.example`. Reports: `eval/results/*_extraction_phase8-threads10.json`; benchmark scripts kept out of the repository (results above).
 
 ## Part 5 — Test cases from real receipts (tool ready; waiting for receipts)
 
