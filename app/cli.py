@@ -5,7 +5,9 @@
     python -m app.cli process samples/ --save [--force]      # store in data/bills.db
     python -m app.cli list [--status needs_review] [--category Food] [--from 2026-09-01]
     python -m app.cli show 3
-    python -m app.cli export --out backup.json
+    python -m app.cli export --out data.json
+    python -m app.cli backup --out bills-backup.zip           # database + photos
+    python -m app.cli restore bills-backup.zip                # the app must be stopped
     python -m app.cli check                                   # is everything installed and working?
     python -m app.cli serve [--lan]                           # start the web app
 """
@@ -182,6 +184,43 @@ def cmd_export(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_backup(args: argparse.Namespace) -> int:
+    from datetime import datetime
+
+    from app.config import get_settings
+    from app.export import write_backup
+
+    out = args.out or Path(f"bills-backup-{datetime.now():%Y-%m-%d}.zip")
+    info = write_backup(get_settings().db_path, out)
+    print(f"Backup written to {out}: database + {info['photos']} photos, {info['bytes'] / 1e6:.1f} MB")
+    return 0
+
+
+def cmd_restore(args: argparse.Namespace) -> int:
+    from app.config import get_settings
+    from app.export import restore_backup
+
+    s = get_settings()
+    import socket
+    with socket.socket() as probe:
+        probe.settimeout(1)
+        if probe.connect_ex(("127.0.0.1", s.port)) == 0:
+            print(f"The app is running (port {s.port}). Stop it first (Start menu: Stop Chat With Your Bills).")
+            return 1
+    if not args.yes:
+        answer = input(f"Replace the database {s.db_path} with the one in {args.archive}? "
+                       "The current one is kept as a copy. [y/N] ")
+        if answer.strip().lower() not in ("y", "yes"):
+            print("Nothing changed.")
+            return 1
+    info = restore_backup(args.archive)
+    print(f"Restored {info['receipts']} receipts; {info['photos_added']} photos added"
+          + (f"; WARNING: {info['photos_missing']} photos missing" if info["photos_missing"] else "") + ".")
+    if info["previous_database"]:
+        print(f"Previous database kept as {info['previous_database']}")
+    return 0
+
+
 def cmd_check(args: argparse.Namespace) -> int:
     """Check every part the app needs; exit code 1 if something required is missing."""
     import platform
@@ -318,6 +357,15 @@ def main(argv: list[str] | None = None) -> int:
     export = sub.add_parser("export", help="export all stored receipts as JSON")
     export.add_argument("--out", type=Path)
     export.set_defaults(func=cmd_export)
+
+    backup = sub.add_parser("backup", help="database + photos in one ZIP file")
+    backup.add_argument("--out", type=Path, help="default: bills-backup-<date>.zip")
+    backup.set_defaults(func=cmd_backup)
+
+    restore = sub.add_parser("restore", help="restore a backup ZIP (the app must be stopped)")
+    restore.add_argument("archive", type=Path)
+    restore.add_argument("--yes", action="store_true", help="do not ask for confirmation")
+    restore.set_defaults(func=cmd_restore)
 
     check = sub.add_parser("check", help="check that everything needed is installed and working")
     check.set_defaults(func=cmd_check)

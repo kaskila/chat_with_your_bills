@@ -27,7 +27,9 @@
 > .\.venv\Scripts\python.exe -m app.cli process samples --save         # ... and store in data\bills.db
 > .\.venv\Scripts\python.exe -m app.cli list                           # stored receipts (filters: --status, --category, --from, --to, --search)
 > .\.venv\Scripts\python.exe -m app.cli show 1                         # one receipt with items, warnings, notes
-> .\.venv\Scripts\python.exe -m app.cli export --out backup.json       # everything as JSON
+> .\.venv\Scripts\python.exe -m app.cli export --out data.json         # everything as JSON
+> .\.venv\Scripts\python.exe -m app.cli backup                          # database + photos in one ZIP (also on the System page)
+> .\.venv\Scripts\python.exe -m app.cli restore bills-backup-<date>.zip  # with the app stopped
 > .\.venv\Scripts\python.exe -m app.cli ocr samples\receipt_2.jpeg     # OCR only
 > .\.venv\Scripts\python.exe -m pytest                                 # unit tests
 > .\.venv\Scripts\python.exe -m eval.run_eval --help                   # score against eval/ground_truth

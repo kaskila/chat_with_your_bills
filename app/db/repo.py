@@ -1,7 +1,9 @@
 """Reading and writing receipts. All SQL lives here, parameterized."""
 
 import json
+import re
 import sqlite3
+from difflib import SequenceMatcher
 from typing import Any
 
 from app.schemas import LineItem, ReceiptData
@@ -27,16 +29,27 @@ def find_by_hash(conn: sqlite3.Connection, sha256: str) -> dict | None:
     return dict(row) if row else None
 
 
+def _same_vendor(a: str | None, b: str | None) -> bool:
+    """Shop names as read twice by OCR: ignore case, spaces and punctuation, allow a few
+    misread letters ("SIX LIGHT MEDIA LIMTTED" = "Six Light Media Limited")."""
+    if not a or not b:
+        return False
+    a, b = (re.sub(r"[^a-z0-9]", "", v.lower()) for v in (a, b))
+    return a == b or SequenceMatcher(None, a, b).ratio() >= 0.85
+
+
 def find_duplicates(conn: sqlite3.Connection, receipt: ReceiptData, exclude_id: int | None = None) -> list[int]:
-    """Other receipts with the same vendor, receipt number and total (a re-photographed receipt)."""
-    if not (receipt.vendor and receipt.receipt_no and receipt.total is not None):
+    """Other receipts with the same receipt number and total, and the same shop (or, when a shop
+    name is missing, the same date): a re-photographed receipt."""
+    if not (receipt.receipt_no and receipt.total is not None):
         return []
     rows = conn.execute(
-        """SELECT id FROM receipts
-           WHERE lower(vendor) = lower(?) AND receipt_no = ? AND abs(total - ?) < 0.005 AND id != ?""",
-        (receipt.vendor, receipt.receipt_no, receipt.total, exclude_id or -1),
+        "SELECT id, vendor, date FROM receipts WHERE receipt_no = ? AND abs(total - ?) < 0.005 AND id != ?",
+        (receipt.receipt_no, receipt.total, exclude_id or -1),
     ).fetchall()
-    return [r["id"] for r in rows]
+    return [r["id"] for r in rows
+            if _same_vendor(r["vendor"], receipt.vendor)
+            or ((not r["vendor"] or not receipt.vendor) and r["date"] and r["date"] == receipt.date)]
 
 
 def _write_items(conn: sqlite3.Connection, receipt_id: int, items: list[LineItem]) -> None:

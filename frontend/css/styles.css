@@ -296,3 +296,4 @@ table.edit td:first-child { min-width: 13rem; }
   /* These four are in the bottom bar; "More" lists the rest. */
   .nav a[data-route="upload"], .nav a[data-route="receipts"], .nav a[data-route="dashboard"], .nav a[data-route="chat"] { display: none; }
 }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }

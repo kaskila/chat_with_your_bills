@@ -144,3 +144,20 @@ def test_user_edit_replaces_items(conn, fake_pipeline, tmp_path):
     assert record["user_edited"] is True
     assert [i["description"] for i in record["items"]] == ["Corrected"]
     assert record["ocr_text_rapid"] == "OCR TEXT"  # untouched fields are kept
+
+
+def test_duplicate_found_when_ocr_misreads_the_shop_name(conn):
+    def store(vendor, sha, date="2026-07-21"):
+        rid = repo.insert_receipt(conn, image_sha256=sha, image_path=f"{sha}.jpg", original_filename=None)
+        repo.save_extraction(conn, rid, ReceiptData(vendor=vendor, receipt_no="46541", total=50.0, date=date),
+                             status="verified", warnings=[], notes=[])
+        return rid
+
+    first = store("SIX LIGHT MEDIA LIMTTED", "s1")
+    again = ReceiptData(vendor="Six Light Media Limited", receipt_no="46541", total=50.0, date="2026-07-21")
+    assert repo.find_duplicates(conn, again) == [first]
+    other_shop = ReceiptData(vendor="Mukuba Supermart", receipt_no="46541", total=50.0, date="2026-07-21")
+    assert repo.find_duplicates(conn, other_shop) == []
+    no_name = ReceiptData(vendor=None, receipt_no="46541", total=50.0, date="2026-07-21")
+    assert repo.find_duplicates(conn, no_name) == [first]  # same number, total and date
+    assert repo.find_duplicates(conn, no_name.model_copy(update={"date": "2026-08-01"})) == []

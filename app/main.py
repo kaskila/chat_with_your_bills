@@ -12,7 +12,7 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
 from app import access, logs
-from app.api import chat, evals, jobs, lab, receipts, stats, system
+from app.api import chat, evals, export, jobs, lab, receipts, stats, system
 from app.config import PROJECT_ROOT, get_settings
 from app.db import repo
 from app.db.database import connect
@@ -48,7 +48,7 @@ def create_app(*, db_path: Path | str | None = None, start_worker: bool = True, 
     app.state.eval = {}
 
     app.middleware("http")(access.guard)
-    for module in (receipts, jobs, stats, chat, lab, system, evals):
+    for module in (receipts, jobs, stats, chat, export, lab, system, evals):
         app.include_router(module.router)
 
     if FRONTEND_DIR.is_dir():

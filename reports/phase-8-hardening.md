@@ -1,6 +1,6 @@
 # Phase 8 — Hardening and performance (in progress)
 
-**Status:** parts 1 (failures) and 2 (logs) done 2026-10-10; export/backup, performance tuning and a real-receipt test set to follow.
+**Status:** parts 1 (failures), 2 (logs) and 3 (export and backup) done 2026-10-10; performance tuning and a real-receipt test set to follow.
 
 ## Goal
 
@@ -71,3 +71,30 @@ Live, on the separate test copy: one receipt (11_quickride_taxi) gave the expect
 ### Files
 
 `app/logs.py`, `app/worker.py`, `app/main.py`, `app/cli.py`, `app/config.py` (`log_dir`), `tests/test_failures.py`, `tests/conftest.py`.
+
+## Part 3 — Export and backup
+
+### What was done
+
+| Download (System page → Your data) | API | Contents |
+| --- | --- | --- |
+| Receipts (CSV) | `GET /api/export/receipts.csv` | One row per receipt: date, time, shop, tax ID, receipt no., currency, subtotal, discount, service charge, tax, total, paid, change, payment, number of items, status, warning codes, edited, file name, added |
+| Items (CSV) | `GET /api/export/items.csv` | One row per item with its receipt's date, shop, currency, total and status |
+| Everything (JSON) | `GET /api/export/data.json` | Every receipt with items, warnings, notes, OCR texts and timings (not the raw model output) |
+| Full backup (ZIP) | `GET /api/export/backup.zip`, `python -m app.cli backup [--out file.zip]` | `bills.db` + every photo + a README with restore steps |
+
+Restore: `python -m app.cli restore <file>.zip [--yes]` refuses while the app is running, asks for confirmation, keeps the current database as `bills.db.before-restore-<time>`, and only adds photos (they are named by content, so nothing is overwritten); it reports any photos the database refers to but the backup lacks.
+
+Found and fixed while checking the export: a re-photographed receipt was not flagged as a possible duplicate when the OCR read the shop name differently ("SIX LIGHT MEDIA LIMTTED" vs "LIMITED"; receipts #3 and #29). Duplicates are now: same receipt number and total, and a shop name that matches ignoring case and punctuation with at least 85% similarity (or, when one name is missing, the same date).
+
+### How it works
+
+`app/export.py`. CSVs are UTF-8 with a byte-order mark so Excel shows names and currency letters correctly. The backup copies the database with SQLite's backup API (a consistent snapshot even while the worker writes) and stores the photos uncompressed in the ZIP (they are JPEGs already), so it is quick.
+
+### Results
+
+On the real data through the Tailscale address: receipts.csv 29 rows (4 KB), items.csv 76 rows (7 KB), data.json 52 KB, all under 0.3 s; full backup 20 MB with all photos in 11.5 s. Tests: CSV format and BOM, JSON content, backup contents and a restore onto an empty data folder; duplicate rule (misread shop name found, other shop not, missing name with same/different date). 152 automated tests passing.
+
+### Files
+
+`app/export.py`, `app/api/export.py`, `app/cli.py` (`backup`, `restore`), `app/db/repo.py` (`find_duplicates`), `frontend/js/pages/system.js`, `frontend/css/styles.css`, `tests/test_export.py`, `tests/test_db.py`.

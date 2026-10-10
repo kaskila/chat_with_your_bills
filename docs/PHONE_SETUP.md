@@ -62,6 +62,7 @@ On the computer, the app is always at **http://127.0.0.1:8000**.
 - Processing takes about a minute per receipt (longer when the vision model re-reads it). You can lock the phone: the computer keeps working, and the result is there when you come back (Upload or Receipts).
 - **Receipts** shows what was read; anything marked **Needs review** has a warning to check. **Dashboard** and **Chat** work as on the computer.
 - The phone and the computer show the same data: there is one database, on the computer.
+- **Back up** now and then: System → Your data → **Full backup (ZIP)** (database and photos; works from the phone too). Receipts and items can also be downloaded as CSV for a spreadsheet.
 
 ## Keep the computer reachable
 
