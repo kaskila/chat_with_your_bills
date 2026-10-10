@@ -193,3 +193,44 @@ def test_computed_unit_prices_are_cleared_not_flagged():
     assert result.receipt.items[0].unit_price is None
     assert result.status == "verified", result.warnings
     assert any("calculated by the model" in n for n in result.notes)
+
+
+OCR_13 = ("SUNRISE BAKERY\n08/10/2026\n2 x Meat pie  36.00\nScones 6pk  30.00\nBrown loaf  22.00\n"
+          "TOTAL  88.00\nPaid by  CASH\nTendered  100.00\nReceipt #719665")
+
+
+def bakery(**overrides) -> LlmReceipt:
+    items = [LlmItem(description="Meat pie", quantity=2, unit_price=None, amount=36, category="Food"),
+             LlmItem(description="Scones", quantity=6, unit_price=None, amount=30, category="Food"),
+             LlmItem(description="Brown loaf", quantity=1, unit_price=22, amount=22, category="Food")]
+    return receipt(**{**dict(items=items, vendor_tax_id=None, date="08/10/2026", subtotal=88, tax=None,
+                             total=88, amount_paid=100, change=12), **overrides})
+
+
+def test_computed_change_and_copied_subtotal_are_cleared():
+    # Receipt 13: no change line and no subtotal line are printed.
+    result = validate(bakery(), ocr_text=OCR_13, ocr_confidence=0.99, today=TODAY)
+    assert result.receipt.change is None and result.receipt.subtotal is None
+    assert result.receipt.total == 88
+    assert result.status == "verified", result.warnings
+
+
+def test_computed_change_cleared_even_when_the_number_is_printed_elsewhere():
+    # Receipt 02: change 30 matches the printed onions line, but no change line is printed.
+    result = validate(bakery(change=12, amount_paid=100), ocr_text=OCR_13 + "\nOnions 12.00", today=TODAY)
+    assert result.receipt.change is None
+
+
+def test_printed_change_and_subtotal_are_kept():
+    ocr = OCR_13.replace("TOTAL  88.00", "Subtotal  88.00\nTOTAL  88.00") + "\nChange  12.00"
+    result = validate(bakery(), ocr_text=ocr, today=TODAY)
+    assert result.receipt.change == 12 and result.receipt.subtotal == 88
+
+
+def test_subtotal_already_after_discount_is_consistent():
+    # Receipt 17: NET AMOUNT 612.93 is after the 79.00 discount; + VAT 98.07 = 711.00.
+    items = [LlmItem(description="Denim jeans", quantity=1, unit_price=420, amount=420, category="Other"),
+             LlmItem(description="Cotton shirt", quantity=2, unit_price=185, amount=370, category="Other")]
+    result = validate(receipt(items=items, subtotal=612.93, discount=79, tax=98.07, total=711,
+                              amount_paid=None, change=None), today=TODAY)
+    assert "TOTAL_MISMATCH" not in codes(result), result.warnings

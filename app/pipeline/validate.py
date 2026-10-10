@@ -24,6 +24,9 @@ _NOT_ITEMS = re.compile(
 )
 
 _DISCOUNT_LINE = re.compile(r"\b(discount|promo(tion)?|coupon|voucher|rebate)\b", re.IGNORECASE)
+# Labels that show a change / subtotal line is actually printed.
+_CHANGE_LABEL = re.compile(r"\b(change|chg)\b", re.IGNORECASE)
+_SUBTOTAL_LABEL = re.compile(r"sub\s*-?\s*total|\bnet\s*(amount|total)|\bexcl|before\s*tax|\btaxable", re.IGNORECASE)
 # Dates as printed: 15/09/2026, 2026-10-01, 05-10-2026, 28.09.2026, 30/09/26, 08 Oct 2026, Oct 03, 2026
 _DATE_IN_TEXT = re.compile(
     r"\b(\d{4}[-/.]\d{1,2}[-/.]\d{1,2}|\d{1,2}[-/.]\d{1,2}[-/.]\d{2,4}|"
@@ -154,11 +157,12 @@ def _totals_consistent(r: ReceiptData) -> bool:
     Tax and service charge may be added on top, already included in the prices,
     or the service charge may be part of the printed tax figure. Try each.
     """
-    discount = r.discount or 0.0
+    # The printed subtotal may also be after the discount already ("NET AMOUNT").
+    discounts = {r.discount or 0.0, 0.0}
     extras = [x for x in (r.tax, r.service_charge) if x]
     for use in product((False, True), repeat=len(extras)):
         added = sum(x for x, on in zip(extras, use) if on)
-        if close(r.subtotal - discount + added, r.total):
+        if any(close(r.subtotal - discount + added, r.total) for discount in discounts):
             return True
     return False
 
@@ -318,6 +322,33 @@ def _clear_computed_unit_prices(receipt: ReceiptData, ocr_text: str | None) -> s
     return f"Unit prices not printed on the receipt were removed (calculated by the model): {', '.join(cleared)}."
 
 
+def _clear_computed_change(receipt: ReceiptData, ocr_text: str | None) -> str | None:
+    """The model calculated the change (paid 100 - total 88 = 12) although no change line is
+    printed. Not data from the receipt: clear it when it equals paid - total and is either not
+    printed anywhere or no change label is printed."""
+    r = receipt
+    if not ocr_text or not r.change or r.amount_paid is None or r.total is None:
+        return None
+    if not close(r.change, r.amount_paid - r.total):
+        return None
+    if _grounded(r.change, numbers_in_text(ocr_text)) and _CHANGE_LABEL.search(ocr_text):
+        return None
+    old, r.change = r.change, None
+    return f"Change {old:.2f} is not printed on the receipt (calculated by the model); removed."
+
+
+def _drop_copied_subtotal(receipt: ReceiptData, ocr_text: str | None) -> str | None:
+    """The model filled in a subtotal equal to the total on a receipt that prints no subtotal
+    line (Subtotal, Net Amount, Excl Total ...): it is a copy of the total, not a printed value."""
+    r = receipt
+    if not ocr_text or r.subtotal is None or r.total is None or abs(r.subtotal - r.total) >= 0.005:
+        return None
+    if _SUBTOTAL_LABEL.search(ocr_text):
+        return None
+    r.subtotal = None
+    return f"Subtotal {r.total:.2f} removed: no subtotal line is printed (it was a copy of the total)."
+
+
 def _date_from_text(receipt: ReceiptData, ocr_text: str | None) -> str | None:
     """The model found no date, but a date is printed (e.g. alone on a line): use the first one."""
     if receipt.date is not None or not ocr_text:
@@ -350,6 +381,9 @@ def validate(raw: LlmReceipt, *, ocr_text: str | None = None, ocr_confidence: fl
         notes.append(note)
     for fix in (_fix_cash_as_total, _fill_total):
         if note := fix(receipt):
+            notes.append(note)
+    for fix in (_clear_computed_change, _drop_copied_subtotal):
+        if note := fix(receipt, ocr_text):
             notes.append(note)
     if note := _date_from_text(receipt, ocr_text):
         notes.append(note)
