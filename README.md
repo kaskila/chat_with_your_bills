@@ -260,3 +260,5 @@ Natural places to extend the project are runtime validation after extraction, an
 ## Documentation verification
 
 This guide was prepared by inspecting all ten Python source files and the directory layout. The database schema above comes from `table_creation.py`; existing database contents were not audited. OCR, model inference, installation commands, and the full pipeline were not executed as part of this documentation work.
+#   c h a t _ w i t h _ y o u r _ b i l l s  
+ 
