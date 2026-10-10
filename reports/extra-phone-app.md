@@ -1,6 +1,6 @@
 # Extra — Using the app on the phone (in progress)
 
-**Status:** steps 1–4 of [docs/PHONE_PLAN.md](../docs/PHONE_PLAN.md) done (2026-10-10; step 4 waiting for the phone test); step 5 (full real-phone test) to do. The user guide is [docs/PHONE_SETUP.md](../docs/PHONE_SETUP.md).
+**Status:** done (2026-10-10): all five steps of [docs/PHONE_PLAN.md](../docs/PHONE_PLAN.md); confirmed by the user on a Pixel 6. The user guide is [docs/PHONE_SETUP.md](../docs/PHONE_SETUP.md).
 
 ## Goal
 
@@ -58,10 +58,10 @@ Phone "Bills" app ──https──► Tailscale on the phone ══ encrypted t
   Shrinking changes the result no more than re-saving the same photo does: RapidOCR's line grouping is sensitive to any small pixel change, and the OCR never uses more than 1600 px. Receipt 26 is wrong and flagged in every version (handwriting is beyond the OCR). Only two real photos were available, so this is a sanity check, not a measurement; Step 5's real receipts will extend it.
 - 139 automated tests passing (access rules incl. Tailscale owner and Funnel, QR code, manifest and icons served, service-worker file list matches the real files and excludes the API).
 
-## Still to do
+## Not covered
 
-- Step 4: try the bottom bar, upload speed and the live camera on the real phone.
-- Step 5: full run-through on the phone; not yet tested from a fresh clone on another computer.
+- Not yet tested: installing from a fresh clone on another computer; an iPhone.
+- Real receipts as a test set: Phase 8.
 
 ## Files
 

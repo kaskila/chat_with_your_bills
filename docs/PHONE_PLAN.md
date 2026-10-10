@@ -66,7 +66,7 @@ Laptop: Tailscale ──► Chat With Your Bills (127.0.0.1:8000) ──► Olla
 
 **Done when:** a receipt photographed on mobile data uploads in a few seconds and its result appears in the app.
 
-**Status (2026-10-10): built, waiting for the phone test.** Photos over 2400 px are shrunk in the browser (JPEG 0.9, EXIF rotation applied) with a "Preparing / Uploading (size)" line: the Pixel 6's 4080 × 3072 photos go from 1.3–2.7 MB to 0.5–0.8 MB. Accuracy check on the two real phone photos (the 23 test images are all ≤ 1310 px, so resizing does not touch them): the differences after shrinking were the same kind as after re-saving the photo at full size without shrinking, i.e. OCR sensitivity to any pixel change, not lost detail (the OCR never uses more than 1600 px). Bottom navigation on phones (Upload, Receipts, Dashboard, Chat, More), 44 px touch targets on touch screens, every page checked at 390 px (the System page overflowed; fixed). Live camera on the phone works over https (not yet tried on the real phone). Notifications and the offline queue left for later.
+**Status (2026-10-10): done; confirmed by the user on the phone.** Photos over 2400 px are shrunk in the browser (JPEG 0.9, EXIF rotation applied) with a "Preparing / Uploading (size)" line: the Pixel 6's 4080 × 3072 photos go from 1.3–2.7 MB to 0.5–0.8 MB. Accuracy check on the two real phone photos (the 23 test images are all ≤ 1310 px, so resizing does not touch them): the differences after shrinking were the same kind as after re-saving the photo at full size without shrinking, i.e. OCR sensitivity to any pixel change, not lost detail (the OCR never uses more than 1600 px). Bottom navigation on phones (Upload, Receipts, Dashboard, Chat, More), 44 px touch targets on touch screens, every page checked at 390 px (the System page overflowed; fixed). Live camera on the phone works over https (not yet tried on the real phone). Notifications and the offline queue left for later.
 
 ### Step 5 — Test on your real phone, then document
 
@@ -74,6 +74,8 @@ Laptop: Tailscale ──► Chat With Your Bills (127.0.0.1:8000) ──► Olla
 - `docs/PHONE_SETUP.md`: a step-by-step guide with screenshots (Tailscale, install to home screen, troubleshooting: laptop asleep, Ollama not running, wrong network).
 - Tests for the new parts (Funnel refusal, manifest and service worker served, start script self-check).
 - Report: `reports/extra-phone-app.md`.
+
+**Status (2026-10-10): done.** The user installed the app on the Pixel 6, photographed and processed receipts over mobile data (#27–#29), corrected one in the app (#28), and confirmed the bottom bar, upload speed and the rest work. Guide: `docs/PHONE_SETUP.md`; tests for Funnel refusal, owner check, manifest and service worker are in `tests/test_access.py` and `tests/test_frontend.py`. Building a test set from real receipts moves to Phase 8 (it is that phase's last task).
 
 ## What you will need to do
 
