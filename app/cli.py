@@ -6,6 +6,8 @@
     python -m app.cli list [--status needs_review] [--category Food] [--from 2026-09-01]
     python -m app.cli show 3
     python -m app.cli export --out backup.json
+    python -m app.cli check                                   # is everything installed and working?
+    python -m app.cli serve [--lan]                           # start the web app
 """
 
 import argparse
@@ -180,6 +182,66 @@ def cmd_export(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_check(args: argparse.Namespace) -> int:
+    """Check every part the app needs; exit code 1 if something required is missing."""
+    import platform
+    import time
+
+    import numpy as np
+
+    from app.api.system import _ollama_status
+    from app.config import get_settings
+    from app.db.database import connect, schema_version
+    from app.pipeline.ocr_rapid import run_ocr
+
+    s = get_settings()
+    problems = 0
+
+    def report(ok: bool, what: str, detail: str = "", fix: str = "") -> None:
+        nonlocal problems
+        problems += not ok
+        print(f"  {'OK  ' if ok else 'FAIL'} {what}" + (f": {detail}" if detail else ""))
+        if not ok and fix:
+            print(f"       -> {fix}")
+
+    print("Checking Chat With Your Bills...")
+    version = platform.python_version()
+    report(sys.version_info >= (3, 12), "Python", version, "Install Python 3.14 from python.org")
+
+    try:
+        conn = connect(s.db_path)
+        report(True, "Database", f"{s.db_path} (schema version {schema_version(conn)})")
+        conn.close()
+    except Exception as error:  # noqa: BLE001 - report any failure
+        report(False, "Database", str(error), f"Check that {s.db_path.parent} is writable")
+
+    # A tiny test image; the first run also downloads the OCR model files.
+    image = np.full((80, 360, 3), 255, np.uint8)
+    cv2.putText(image, "TOTAL 12.50", (10, 55), cv2.FONT_HERSHEY_SIMPLEX, 1.4, (0, 0, 0), 3)
+    try:
+        started = time.perf_counter()
+        text = run_ocr(image).text
+        ok = "12.50" in text
+        report(ok, "OCR (RapidOCR)", f"read '{text.strip()}' in {time.perf_counter() - started:.1f} s",
+               "Reinstall requirements: .venv\\Scripts\\python.exe -m pip install -r requirements.txt")
+    except Exception as error:  # noqa: BLE001
+        report(False, "OCR (RapidOCR)", str(error), "Reinstall requirements; the first run needs internet")
+
+    status = _ollama_status()
+    report(status["reachable"], "Ollama", status["host"] if status["reachable"] else status.get("error", ""),
+           "Install Ollama from https://ollama.com and start it")
+    for role, model in status.get("models", {}).items():
+        required = role == "extract"
+        label = "Extraction model" if required else "Vision model (second reading)"
+        if model["installed"] or required:
+            report(model["installed"], label, model["name"], f"ollama pull {model['name']}")
+        else:
+            print(f"  WARN {label}: {model['name']} not installed -> ollama pull {model['name']}")
+
+    print("All checks passed." if not problems else f"{problems} problem(s) found.")
+    return 1 if problems else 0
+
+
 def cmd_serve(args: argparse.Namespace) -> int:
     import os
     import secrets
@@ -187,6 +249,12 @@ def cmd_serve(args: argparse.Namespace) -> int:
     import uvicorn
 
     from app.config import get_settings
+
+    if args.log_file:
+        # Started in the background (scripts/start.ps1): all output goes to the log file.
+        args.log_file.parent.mkdir(parents=True, exist_ok=True)
+        log = open(args.log_file, "a", encoding="utf-8", buffering=1)  # noqa: SIM115 - open while serving
+        sys.stdout = sys.stderr = log
 
     os.environ["BILLS_PORT"] = str(args.port)
     host = "127.0.0.1"
@@ -248,10 +316,14 @@ def main(argv: list[str] | None = None) -> int:
     export.add_argument("--out", type=Path)
     export.set_defaults(func=cmd_export)
 
+    check = sub.add_parser("check", help="check that everything needed is installed and working")
+    check.set_defaults(func=cmd_check)
+
     serve = sub.add_parser("serve", help="start the web app (http://127.0.0.1:8000)")
     serve.add_argument("--port", type=int, default=8000)
     serve.add_argument("--lan", action="store_true",
                        help="also allow phones on the same Wi-Fi, with a random access key")
+    serve.add_argument("--log-file", type=Path, help="write all output to this file (for background starts)")
     serve.set_defaults(func=cmd_serve)
 
     args = parser.parse_args(argv)
