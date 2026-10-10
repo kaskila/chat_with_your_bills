@@ -38,6 +38,7 @@ class Settings(BaseSettings):
     extract_timeout_s: float = 180.0
     vlm_timeout_s: float = 240.0
     llm_retries: int = 1
+    start_ollama: bool = True  # the worker starts a local Ollama that is not running
 
     # RapidOCR
     rapid_ocr_version: str = "PP-OCRv6"  # PP-OCRv4 | PP-OCRv5 | PP-OCRv6

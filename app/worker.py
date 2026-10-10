@@ -13,13 +13,15 @@ from pathlib import Path
 from app import ingest
 from app.db import repo
 from app.db.database import connect
+from app.config import get_settings
 from app.keepawake import keep_awake
+from app.llm import client as llm
 
 log = logging.getLogger("bills.worker")
 
 # Rough share of total time each stage starts at (extraction dominates).
 STAGE_PROGRESS = {
-    "starting": 0.02, "preprocess": 0.03, "ocr": 0.05, "extract": 0.15,
+    "waiting_for_ollama": 0.01, "starting": 0.02, "preprocess": 0.03, "ocr": 0.05, "extract": 0.15,
     "validate": 0.55, "vlm": 0.6, "vlm_extract": 0.8, "saving": 0.97,
 }
 
@@ -65,11 +67,30 @@ class Worker:
         conn = connect(self.db_path)
         try:
             while not self._stop.is_set():
-                if not self.run_once(conn):
+                try:
+                    worked = self.run_once(conn)
+                except Exception:  # e.g. the database was busy: log it and keep the worker alive
+                    log.exception("Worker loop error; retrying in 5 s")
+                    worked = False
+                if not worked:
                     self._wake.wait(timeout=5)
                     self._wake.clear()
         finally:
             conn.close()
+
+    def _ollama_ready(self, conn, job: dict) -> bool:
+        """Ollama must answer before a receipt is processed; a stopped local Ollama is started."""
+        if llm.ollama_reachable():
+            return True
+        repo.update_job(conn, job["id"], stage="waiting_for_ollama", progress=STAGE_PROGRESS["waiting_for_ollama"])
+        if llm.ensure_ollama():
+            return True
+        host = get_settings().ollama_host
+        message = (f"Ollama is not running at {host} and could not be started. Start the Ollama app on the "
+                   "computer, then reprocess this receipt (or use 'Reprocess all failed').")
+        repo.mark_failed(conn, job["receipt_id"], message)
+        repo.finish_job(conn, job["id"], failed=True, error=message)
+        return False
 
     def run_once(self, conn) -> bool:
         """Process the next queued job, if any. Returns True if a job was processed."""
@@ -77,6 +98,9 @@ class Worker:
         if job is None:
             return False
         self.current_job = job["id"]
+        if not self._ollama_ready(conn, job):
+            self.current_job = None
+            return True
 
         def on_stage(stage: str) -> None:
             repo.update_job(conn, job["id"], stage=stage, progress=STAGE_PROGRESS.get(stage, 0.5))

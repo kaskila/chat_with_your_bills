@@ -6,6 +6,7 @@ from typing import Annotated, Literal
 
 import cv2
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
+from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import FileResponse, Response
 from pydantic import BaseModel
 
@@ -60,6 +61,12 @@ async def upload(conn: Conn, worker: WorkerDep, files: list[UploadFile] = File(.
             continue
         if not _looks_like_image(data):
             results.append(UploadResult(filename=name, error="Not a JPEG, PNG or WEBP image."))
+            continue
+        try:  # a damaged or half-uploaded photo is refused now, not after waiting in the queue
+            await run_in_threadpool(load_image, data)
+        except ValueError:
+            results.append(UploadResult(filename=name, error="The photo could not be opened (damaged or "
+                                                             "incomplete file). Take or upload it again."))
             continue
         registered = register_image(conn, data, name)
         if registered.already_processed:
@@ -141,6 +148,15 @@ def reprocess(conn: Conn, worker: WorkerDep, receipt_id: int, force_vlm: bool = 
     worker.notify()
     return UploadResult(filename=record["original_filename"] or "", receipt_id=receipt_id, job_id=job_id,
                         status="processing")
+
+
+@router.post("/reprocess-failed")
+def reprocess_failed(conn: Conn, worker: WorkerDep) -> dict:
+    """Queue every failed receipt again (e.g. after Ollama was not running)."""
+    ids = [row[0] for row in conn.execute("SELECT id FROM receipts WHERE status = 'failed' ORDER BY id")]
+    jobs = [{"receipt_id": rid, "job_id": enqueue(conn, rid)} for rid in ids]
+    worker.notify()
+    return {"queued": len(jobs), "jobs": jobs}
 
 
 @router.delete("/{receipt_id}", status_code=204)

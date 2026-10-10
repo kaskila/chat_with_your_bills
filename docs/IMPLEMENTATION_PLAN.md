@@ -516,6 +516,8 @@ Changes from the plan: a timeout is no longer retried (on a slow CPU a retry onl
 
 **Done when:** eval on the larger set meets the targets in §10; no stuck jobs in failure tests.
 
+**Progress (2026-10-10):** failure handling done: damaged photos refused at upload, the worker starts a stopped local Ollama, the worker loop survives errors, "Reprocess all failed"; live failure tests (Ollama down, model missing, timeout, damaged photo, app stopped mid-job, Ollama stopped) all end with a clear message and no stuck job. Details: reports/phase-8-hardening.md.
+
 ### Phase 9 — Clean-up and documentation
 
 **Tasks**

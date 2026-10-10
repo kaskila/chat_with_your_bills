@@ -1,7 +1,7 @@
 // All stored receipts with filters.
 
 import { api, query } from "../api.js";
-import { clear, date, errorBox, h, money, recall, remember, statusBadge } from "../ui.js";
+import { clear, date, errorBox, h, money, recall, remember, statusBadge, toast } from "../ui.js";
 
 const CATEGORIES = ["Food", "Drinks", "Grocery", "Utilities", "Travel", "Logistics", "Office & Stationery", "Other"];
 
@@ -18,6 +18,27 @@ export async function render(view) {
 
   const body = h("div");
   const count = h("span", { class: "muted" });
+  const failedNotice = h("div");
+
+  // Receipts that failed (e.g. Ollama was not running) can be queued again in one go.
+  async function loadFailed() {
+    let failed = [];
+    try { failed = await api.get("/api/receipts?status=failed&limit=1000"); } catch { /* the banner reports it */ }
+    if (!failed.length) { clear(failedNotice); return; }
+    const button = h("button", { class: "small primary", onclick: async () => {
+      button.disabled = true;
+      try {
+        const result = await api.post("/api/receipts/reprocess-failed");
+        toast(`${result.queued} receipt${result.queued === 1 ? "" : "s"} queued again. Progress is on the Upload page.`);
+        await Promise.all([loadFailed(), load()]);
+      } catch (error) {
+        toast(error.message, "error");
+        button.disabled = false;
+      }
+    } }, `Reprocess all ${failed.length}`);
+    clear(failedNotice, h("div", { class: "msg error row", style: "margin-bottom: 1rem" },
+      h("span", {}, `${failed.length} receipt${failed.length === 1 ? "" : "s"} could not be processed.`), button));
+  }
 
   async function load() {
     const filters = Object.fromEntries(Object.entries(controls).map(([k, el]) => [k, el.value]));
@@ -59,10 +80,11 @@ export async function render(view) {
   clear(view,
     h("div", { class: "page-head" }, h("div", {}, h("h1", {}, "Receipts"), count),
       h("a", { class: "btn", href: "#/upload" }, "+ Upload")),
+    failedNotice,
     h("div", { class: "card" },
       h("div", { class: "row", style: "margin-bottom: 0.75rem" }, search, status, category,
         h("label", { class: "row small muted" }, "From", from), h("label", { class: "row small muted" }, "to", to),
         h("button", { class: "small", onclick: () => { for (const el of Object.values(controls)) el.value = ""; load(); } }, "Clear")),
       body));
-  await load();
+  await Promise.all([load(), loadFailed()]);
 }

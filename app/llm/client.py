@@ -5,8 +5,12 @@ loaded (``keep_alive``), runs with thinking off and temperature 0, and reports
 Ollama's own timing statistics.
 """
 
+import os
+import shutil
+import subprocess
 import time
 from dataclasses import dataclass
+from pathlib import Path
 from functools import lru_cache
 
 import httpx
@@ -97,6 +101,48 @@ def chat(model: str, messages: list[dict], *, format: dict | str | None = None,
         if attempt < s.llm_retries:
             time.sleep(1.0)
     raise last_error if isinstance(last_error, LLMError) else LLMError(f"Ollama call failed: {last_error}")
+
+
+def ollama_reachable(timeout: float = 3.0) -> bool:
+    try:
+        httpx.get(f"{get_settings().ollama_host}/api/tags", timeout=timeout).raise_for_status()
+        return True
+    except httpx.HTTPError:
+        return False
+
+
+def _ollama_programs() -> list[list[str]]:
+    """Ways to start Ollama on this computer: its tray app (Windows), else ``ollama serve``."""
+    found = []
+    exe = shutil.which("ollama") or str(Path(os.environ.get("LOCALAPPDATA", "")) / "Programs" / "Ollama" / "ollama.exe")
+    tray = Path(exe).with_name("ollama app.exe")
+    if tray.exists():
+        found.append([str(tray)])
+    if Path(exe).exists():
+        found.append([exe, "serve"])
+    return found
+
+
+def ensure_ollama(wait_s: float = 45.0) -> bool:
+    """Ollama answers, or was started and answers within ``wait_s``. Only for a local Ollama
+    (localhost) and when ``start_ollama`` is on."""
+    if ollama_reachable():
+        return True
+    s = get_settings()
+    if not s.start_ollama or not any(h in s.ollama_host for h in ("localhost", "127.0.0.1")):
+        return False
+    flags = getattr(subprocess, "CREATE_NO_WINDOW", 0) | getattr(subprocess, "DETACHED_PROCESS", 0)
+    for command in _ollama_programs():
+        try:
+            subprocess.Popen(command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, creationflags=flags)
+        except OSError:
+            continue
+        deadline = time.monotonic() + wait_s
+        while time.monotonic() < deadline:
+            time.sleep(1)
+            if ollama_reachable():
+                return True
+    return False
 
 
 def warm_up(model: str, system: str | None = None) -> float:
