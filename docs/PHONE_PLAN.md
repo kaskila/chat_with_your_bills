@@ -43,6 +43,8 @@ Laptop: Tailscale ──► Chat With Your Bills (127.0.0.1:8000) ──► Olla
 
 **Done when:** on mobile data (Wi-Fi off), the phone opens the https address and the app works.
 
+**Status (2026-10-10): done.** `scripts\phone-access.ps1` (`tailscale serve`, tailnet only, stays on). Address: `https://<computer>.<tailnet>.ts.net/`, shown with a QR code on the System page. Tailscale requests are recognised by the `Tailscale-User-Login` header and allowed only for the computer's Tailscale owner; uvicorn's proxy headers are off so a forwarded address never looks local; Funnel requests are refused. Tested on the user's Pixel 6 over mobile data: app opened, receipt photographed and processed (verified).
+
 ### Step 3 — Installable app (PWA)
 
 - `manifest.webmanifest`: name, short name "Bills", colours, standalone display (no browser bar), start page.
