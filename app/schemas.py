@@ -46,3 +46,4 @@ class ReceiptData(BaseModel):
     amount_paid: float | None = None
     change: float | None = None
     payment_method: str | None = None
+    recipient: str | None = None  # who was paid, for mobile money payments (the vendor is the provider)

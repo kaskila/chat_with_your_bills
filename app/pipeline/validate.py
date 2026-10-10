@@ -387,6 +387,15 @@ def validate(raw: LlmReceipt, *, ocr_text: str | None = None, ocr_confidence: fl
             notes.append(note)
     if note := _date_from_text(receipt, ocr_text):
         notes.append(note)
+    from app.pipeline import mobile_money  # imported here: it uses this module's helpers
+
+    message = mobile_money.apply(receipt, ocr_text, today=today)
+    if message:
+        notes += message.notes
+        if message.complete:  # a fully read screenshot: "too dark" (dark mode) or "small" do not matter
+            image_warnings = []
     warnings = check(receipt, ocr_text=ocr_text, ocr_confidence=ocr_confidence,
                      image_warnings=image_warnings, today=today)
+    if message:
+        warnings += message.warnings
     return Validated(receipt=receipt, warnings=warnings, dropped_items=dropped, notes=notes)

@@ -18,7 +18,7 @@ from app.config import PROJECT_ROOT, get_settings
 from app.db import repo
 
 RECEIPT_COLUMNS = ["receipt_id", "date", "time", "vendor", "vendor_tax_id", "receipt_no", "currency", "subtotal",
-                   "discount", "service_charge", "tax", "total", "amount_paid", "change", "payment_method",
+                   "discount", "service_charge", "tax", "total", "amount_paid", "change", "payment_method", "recipient",
                    "items", "status", "warnings", "user_edited", "original_filename", "created_at"]
 ITEM_COLUMNS = ["receipt_id", "date", "vendor", "currency", "position", "description", "quantity", "unit_price",
                 "amount", "category", "receipt_total", "status"]

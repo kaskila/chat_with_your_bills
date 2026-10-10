@@ -77,6 +77,10 @@ MIGRATIONS: list[str] = [
     );
     CREATE INDEX idx_jobs_stage ON jobs(stage);
     """,
+    # 2: who was paid, for mobile money payments (the vendor is the provider, e.g. Airtel)
+    """
+    ALTER TABLE receipts ADD COLUMN recipient TEXT;
+    """,
 ]
 
 

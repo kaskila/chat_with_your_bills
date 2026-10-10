@@ -10,7 +10,7 @@ from app.schemas import LineItem, ReceiptData
 
 _RECEIPT_FIELDS = (
     "vendor", "vendor_tax_id", "receipt_no", "date", "time", "currency", "subtotal", "discount",
-    "service_charge", "tax", "total", "amount_paid", "change", "payment_method",
+    "service_charge", "tax", "total", "amount_paid", "change", "payment_method", "recipient",
 )
 _JSON_COLUMNS = ("warnings", "notes", "timings", "models")
 

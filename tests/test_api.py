@@ -6,7 +6,7 @@ from fastapi.testclient import TestClient
 from app import ingest
 from app.api import system
 from app.config import get_settings
-from app.db.database import connect
+from app.db.database import MIGRATIONS, connect
 from app.main import create_app
 from tests.test_db import fake_result
 
@@ -156,7 +156,7 @@ def test_interrupted_jobs_are_recovered(tmp_path, monkeypatch):
 
 def test_health_and_frontend(api):
     health = api.get("/api/system/health").json()
-    assert health["ollama"]["reachable"] and health["database"]["schema_version"] == 1
+    assert health["ollama"]["reachable"] and health["database"]["schema_version"] == len(MIGRATIONS)
     assert health["worker"]["alive"] is False  # not started in tests
     assert api.get("/").status_code == 200
     assert api.get("/docs").status_code == 200

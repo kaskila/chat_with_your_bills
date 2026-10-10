@@ -7,7 +7,7 @@ import { clear, errorBox, h, money, seconds, statusBadge, toast, warningList } f
 const CATEGORIES = ["Food", "Drinks", "Grocery", "Utilities", "Travel", "Logistics", "Office & Stationery", "Other"];
 const FIELDS = [
   ["vendor", "Vendor", "text"], ["receipt_no", "Receipt no.", "text"], ["date", "Date", "date"],
-  ["time", "Time", "time"], ["currency", "Currency", "text"], ["payment_method", "Payment", "text"],
+  ["time", "Time", "time"], ["currency", "Currency", "text"], ["payment_method", "Payment", "text"], ["recipient", "Paid to", "text"],
   ["subtotal", "Subtotal", "number"], ["discount", "Discount", "number"], ["service_charge", "Service charge", "number"],
   ["tax", "Tax", "number"], ["total", "Total", "number"], ["amount_paid", "Amount paid", "number"], ["change", "Change", "number"],
 ];
