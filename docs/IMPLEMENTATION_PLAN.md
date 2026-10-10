@@ -527,6 +527,8 @@ Changes from the plan: a timeout is no longer retried (on a slow CPU a retry onl
 
 **Done when:** a fresh clone can be set up and running by following the README alone.
 
+**Result (2026-10-10): done.** `legacy/` removed (git history keeps it; local-only files archived in data/archive/), README rewritten, install/start scripts from the phone plan serve as the one-command start. Fresh-clone test: installed in 2.2 min following the README, processed a real receipt correctly, stop script left the main app alone. Details: reports/phase-9-cleanup.md.
+
 ---
 
 ## 10. Testing and accuracy targets

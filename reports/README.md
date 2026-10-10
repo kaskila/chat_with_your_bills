@@ -14,8 +14,8 @@ One report per completed phase of the rebuild described in [docs/IMPLEMENTATION_
 | 7 | [Chat over the stored receipts](phase-7-chat.md) | Done |
 | + | [Camera capture (phone and webcam)](extra-camera-capture.md) | Done (added on request) |
 | + | [Using the app on the phone](extra-phone-app.md) (plan: [PHONE_PLAN](../docs/PHONE_PLAN.md), guide: [PHONE_SETUP](../docs/PHONE_SETUP.md)) | Done |
-| 8 | [Hardening and performance](phase-8-hardening.md) | In progress (all but the real-receipt evaluation) |
-| 9 | Clean-up and documentation | Planned |
+| 8 | [Hardening and performance](phase-8-hardening.md) | Done, except the evaluation on real receipts (waiting for test cases) |
+| 9 | [Clean-up and documentation](phase-9-cleanup.md) | Done |
 
 ## The system in one picture
 

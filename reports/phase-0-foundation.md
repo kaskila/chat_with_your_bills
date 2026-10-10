@@ -12,7 +12,7 @@ Before changing anything, make the project reproducible and make accuracy *measu
    - `git init`, a `.gitignore` that keeps runtime data and personal data out of version control.
    - A virtual environment (`.venv`) and a pinned `requirements.txt`.
    - The new folder layout: `app/` (code), `eval/` (evaluation), `tests/`, `docs/`, `data/` (runtime), `samples/` (example photos).
-   - The original prototype scripts moved unchanged into `legacy/`.
+   - The original prototype scripts moved unchanged into `legacy/` (removed in Phase 9; still in the git history).
 2. **Central configuration** — `app/config.py`: every setting (model names, timeouts, thresholds, paths) in one place, overridable with `BILLS_*` environment variables or a `.env` file (`.env.example` documents them).
 3. **Hand-checked ground truth** for the 3 original receipt photos (`eval/ground_truth/receipt_N.json` + a full transcription `receipt_N.txt`).
 4. **Evaluation tool** — `python -m eval.run_eval` scores OCR text or extracted data against the ground truth and saves a report to `eval/results/`.

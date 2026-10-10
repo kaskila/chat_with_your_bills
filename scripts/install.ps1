@@ -113,4 +113,8 @@ if (-not $NoShortcuts) {
     }
 }
 
-Write-Host "`nDone. Double-click '$AppTitle' on the desktop to start." -ForegroundColor Green
+if ($NoShortcuts) {
+    Write-Host "`nDone. Start with: powershell -ExecutionPolicy Bypass -File scripts\start.ps1" -ForegroundColor Green
+} else {
+    Write-Host "`nDone. Double-click '$AppTitle' on the desktop to start." -ForegroundColor Green
+}
