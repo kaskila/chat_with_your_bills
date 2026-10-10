@@ -58,6 +58,7 @@ function Test-PortBusy([int]$Port) {
 }
 
 function Get-ServerProcesses {
+    # Only servers started from this folder's .venv (another copy of the app is left alone).
     Get-CimInstance Win32_Process -Filter "Name='python.exe' OR Name='pythonw.exe'" |
-        Where-Object { $_.CommandLine -like '*-m app.cli serve*' }
+        Where-Object { $_.CommandLine -like '*-m app.cli serve*' -and $_.CommandLine -like "*$VenvPython*" }
 }

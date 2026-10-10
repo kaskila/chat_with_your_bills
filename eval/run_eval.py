@@ -2,8 +2,7 @@
 
 Usage (from the project root):
 
-    # OCR text: one .txt per receipt in a folder, or the legacy combined file
-    python -m eval.run_eval ocr --name tesseract-legacy --legacy-file legacy/extracted_text.txt
+    # OCR text: one .txt per receipt in a folder
     python -m eval.run_eval ocr --name some-engine --text-dir path/to/texts
 
     # OCR by running preprocessing + RapidOCR on the ground-truth images now
@@ -11,8 +10,9 @@ Usage (from the project root):
     python -m eval.run_eval ocr --name rapid-on-crop --rapid --ocr-on-crop
     python -m eval.run_eval ocr --name rapid-v5-server --rapid --version PP-OCRv5 --model-type server
 
-    # Extraction: a JSON file {"receipt_1.jpeg": {...ReceiptData fields, "warnings": [...]}, ...}
-    python -m eval.run_eval extraction --name legacy --predictions eval/results/legacy_predictions.json
+    # Extraction: run the full pipeline now (needs Ollama), or score a saved predictions file
+    python -m eval.run_eval extraction --name my-run --pipeline --set dev --set test
+    python -m eval.run_eval extraction --name saved --predictions predictions.json   # {"receipt_1.jpeg": {...}}
 
     # Chat: the questions in eval/chat_questions.json against the ground-truth receipts (needs Ollama)
     python -m eval.run_eval chat --name chat-v1
@@ -43,15 +43,6 @@ def load_ground_truth(gt_dir: Path | None = None) -> dict[str, dict]:
         gt["text"] = txt.read_text(encoding="utf-8") if txt.exists() else None
         truth[gt["image"]] = gt
     return truth
-
-
-def read_legacy_ocr(path: Path) -> dict[str, str]:
-    """Split the old pipeline's combined file on its '-- Text from <file> --' markers."""
-    texts = {}
-    for section in path.read_text(encoding="utf-8").split("-- Text from ")[1:]:
-        header, _, body = section.partition("\n")
-        texts[header.removesuffix("--").strip()] = body.strip()
-    return texts
 
 
 def read_text_dir(path: Path) -> dict[str, str]:
@@ -193,7 +184,6 @@ def main(argv: list[str] | None = None) -> int:
     ocr = sub.add_parser("ocr", help="score OCR text")
     ocr.add_argument("--name", required=True)
     src = ocr.add_mutually_exclusive_group(required=True)
-    src.add_argument("--legacy-file", type=Path)
     src.add_argument("--text-dir", type=Path)
     src.add_argument("--rapid", action="store_true", help="run preprocessing + RapidOCR now")
     ocr.add_argument("--ocr-on-crop", action="store_true", help="give RapidOCR the cropped receipt")
@@ -235,8 +225,6 @@ def main(argv: list[str] | None = None) -> int:
         details = {}
         if args.rapid:
             texts, details = run_rapid(truth, args)
-        elif args.legacy_file:
-            texts = read_legacy_ocr(args.legacy_file)
         else:
             texts = read_text_dir(args.text_dir)
         report = eval_ocr(texts, args.name, truth)

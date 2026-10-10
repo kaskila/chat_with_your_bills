@@ -1,277 +1,216 @@
 # Chat With Your Bills
 
-> **Rebuild in progress.** The project is being rebuilt following [docs/IMPLEMENTATION_PLAN.md](docs/IMPLEMENTATION_PLAN.md). Phases 0–7 are done: photo → RapidOCR → qwen3:4b → checks → (VLM re-read when needed) → SQLite, with a FastAPI backend, a browser app (with phone and webcam capture) and chat over the receipts. Phase reports are in [reports/](reports/README.md). The original prototype described below now lives in `legacy/` (example images in `samples/`), and the evaluation tools are in `eval/`.
->
-> **Install once** (needs Python 3.14 and [Ollama](https://ollama.com); downloads the models; creates a Desktop and Start-menu shortcut):
-> ```powershell
-> powershell -ExecutionPolicy Bypass -File scripts\install.ps1              # add -Autostart to start with Windows
-> ```
-> Then double-click **Chat With Your Bills** on the desktop: it starts Ollama and the server in the background and opens the app. Stop it with **Stop Chat With Your Bills** in the Start menu (or `scripts\stop.ps1`). Logs: `data\logs\server.log`. `python -m app.cli check` tests that everything is installed.
->
-> **Or run the server by hand** (Ollama must be running; on a laptop, keep the charger plugged in), then open http://127.0.0.1:8000 for the app (http://127.0.0.1:8000/docs for the API):
-> ```powershell
-> .\.venv\Scripts\python.exe -m app.cli serve          # only this computer
-> .\.venv\Scripts\python.exe -m app.cli serve --lan    # also phones on the same Wi-Fi (prints a link + access key; QR code on the System page)
-> ```
-> With `--lan`, Windows may ask once whether Python may accept connections on private networks: allow it. Use `--lan` only on a network you trust.
->
-> **On your phone** (anywhere, as an installable app, through Tailscale): see [docs/PHONE_SETUP.md](docs/PHONE_SETUP.md). In short: Tailscale on the computer and phone with the same account, then `powershell -ExecutionPolicy Bypass -File scripts\phone-access.ps1` once, and open the address shown on the System page.
->
-> Setup and command-line tools:
->
-> ```powershell
-> python -m venv .venv
-> .\.venv\Scripts\python.exe -m pip install -r requirements.txt
-> ollama pull qwen3:4b                                                 # Ollama must be running
-> .\.venv\Scripts\python.exe -m app.cli process samples                # full pipeline -> JSON
-> .\.venv\Scripts\python.exe -m app.cli process samples --save         # ... and store in data\bills.db
-> .\.venv\Scripts\python.exe -m app.cli list                           # stored receipts (filters: --status, --category, --from, --to, --search)
-> .\.venv\Scripts\python.exe -m app.cli show 1                         # one receipt with items, warnings, notes
-> .\.venv\Scripts\python.exe -m app.cli export --out data.json         # everything as JSON
-> .\.venv\Scripts\python.exe -m app.cli backup                          # database + photos in one ZIP (also on the System page)
-> .\.venv\Scripts\python.exe -m app.cli restore bills-backup-<date>.zip  # with the app stopped
-> .\.venv\Scripts\python.exe -m app.cli ocr samples\receipt_2.jpeg     # OCR only
-> .\.venv\Scripts\python.exe -m pytest                                 # unit tests
-> .\.venv\Scripts\python.exe -m eval.run_eval --help                   # score against eval/ground_truth
-> ```
->
-> The rest of this README describes the original prototype; its commands must now be run from inside `legacy/`, and its scripts still expect images in `bill_image/`. It will be rewritten in Phase 9.
+Photograph a receipt; get its shop, date, items, categories and totals checked and stored; see where your money goes; ask questions like *"How much did I spend on groceries last month?"*
 
-## Overview
+Everything runs on your own computer, on the CPU (no GPU, no cloud services): OCR with RapidOCR, a local language model (qwen3:4b) and a vision model (glm-ocr) through [Ollama](https://ollama.com). Your phone can use it too, as an installable app, through a private Tailscale connection.
 
-This project is a Python command-line prototype that converts receipt images into structured, categorized invoice data. It uses OpenCV for image preprocessing, Tesseract for optical character recognition (OCR), and two local Ollama models for invoice extraction and expense classification.
+## What it does
 
-The current implementation prints the final data as JSON. It does **not** yet provide a chat interface, web application, bill-querying workflow, or automatic database persistence. SQLite table creation and inspection are separate utilities.
+- **Reads receipt photos** (phone photos, crumpled thermal paper, screenshots): finds and straightens the receipt, reads the text, and extracts shop, tax ID, receipt number, date, time, currency, items (with category), subtotal, discount, service charge, tax, total and payment.
+- **Checks every number:** items must add up, totals must be consistent, every amount must actually be printed on the receipt. Problems are flagged ("needs review") instead of silently stored; when the first reading fails the checks, the vision model reads the photo again and the more consistent reading is kept.
+- **Lets you review and correct** each receipt next to its photo, with warnings shown on the affected fields.
+- **Dashboard:** spending by category, shop and month, per currency.
+- **Chat:** questions about your spending, answered from the database (the model only chooses a query; the numbers come straight from SQL).
+- **Phone:** take photos, review, dashboard and chat from your phone, at home or on mobile data.
+- **Your data:** CSV and JSON downloads and a full backup (database and photos).
 
-## Architecture and data flow
+## How well it works
 
-```mermaid
-flowchart TD
-    A[Receipt images in bill_image] --> B[image_cleaning.py]
-    B --> C[cleaned_bill_images/grayscale]
-    B --> D[cleaned_bill_images/threshold]
-    C --> E[ocr_processor.py / Tesseract]
-    E --> F[extracted_text.txt]
-    F --> G[parser.py]
-    G --> H[ollama_1.py + prompt_1.py / qwen3:4b]
-    H --> I[Structured invoice dictionary]
-    I --> J[ollama_2.py + prompt_2.py / qwen3:0.6b]
-    J --> K[Categorized invoices printed as JSON]
-    L[table_creation.py] --> M[ocr_master.db / ocr_line_items]
-    M --> N[check_database.py]
-```
+Measured on 20 synthetic Zambian receipts (dev 01–10, test 11–20) and 3 older photos, with hand-checked answers (`eval/ground_truth`):
 
-There is currently no connection between the parser's output and the database utilities. The two model stages are called “Agent 1” and “Agent 2” in source comments; they are synchronous Python wrappers around the Ollama CLI.
-
-## File guide
-
-| File or directory | Responsibility |
+| Measure | Result |
 | --- | --- |
-| `bill_image/` | Source receipt images; three JPEG examples are present. |
-| `image_cleaning.py` | Produces enhanced grayscale and adaptive-threshold versions of each source image. |
-| `cleaned_bill_images/grayscale/` | Current OCR input directory. |
-| `cleaned_bill_images/threshold/` | Alternative preprocessing output, not consumed by the default OCR configuration. |
-| `cleaned_bill_images/*.jpeg` | Additional images at the directory root; the current pipeline does not read these. |
-| `ocr_processor.py` | Runs Tesseract on grayscale images and overwrites the combined OCR text file. |
-| `ocr_processor_test.py` | Manual comparison of Tesseract page segmentation modes 4, 6, and 11. |
-| `extracted_text.txt` | Intermediate text containing filename-marked receipt sections. |
-| `prompt_1.py` | Builds the conservative invoice-extraction prompt and defines the requested fields. |
-| `ollama_1.py` | Calls `qwen3:4b`, extracts a JSON object from the response, and parses it. |
-| `prompt_2.py` | Defines expense categories and builds the classification prompt. |
-| `ollama_2.py` | Calls `qwen3:0.6b`, cleans the response, and selects a category. |
-| `parser.py` | Reads OCR sections, extracts invoice fields, categorizes each line item, and prints results. |
-| `table_creation.py` | Creates the SQLite line-item table if absent. |
-| `check_database.py` | Prints SQLite table names and line-item column metadata. |
-| `ocr_master.db` | Existing SQLite database file. |
-| `__pycache__/` | Generated Python bytecode cache. |
+| All fields correct, test set (receipts 11–20, never tuned on) | **100%** (every item matched) |
+| All fields correct, dev set | 100% |
+| Wrong totals accepted without a warning | **0** |
+| Item categories correct | 85% |
+| Chat: right query with the right arguments (32 questions) | 32/32 |
+| Time per receipt (Intel i7-1355U, plugged in) | median ~50 s; 2–6 min when the vision model re-reads a hard receipt |
+| Chat answer | ~11 s |
 
-## Processing stages
+Faded handwriting is beyond the OCR: such receipts are flagged for review, not read correctly. The numbers above are from synthetic receipts; measuring on real receipts is the next step (see [Evaluation](#evaluation-and-tests)).
 
-### 1. Image preprocessing
+## Quick start (Windows)
 
-`image_cleaning(input_folder, grayscale_folder, threshold_folder)` accepts `.jpg`, `.jpeg`, and `.png` files, with case-insensitive extension matching. For each readable image, it:
+**You need:** Windows 10/11, 16 GB RAM, Python 3.14 ([python.org](https://www.python.org/downloads/), tick "Add to PATH"), [Ollama](https://ollama.com/download), ~6 GB free disk space for the models.
 
-1. Converts BGR color to grayscale.
-2. Enlarges the image by 2× using cubic interpolation.
-3. Applies CLAHE contrast enhancement with a clip limit of 2.0 and an 8×8 tile grid.
-4. Applies a median filter with kernel size 3.
-5. Generates an adaptive Gaussian threshold image with block size 31 and constant 10.
-6. Saves both the enhanced grayscale and threshold images under the original filename.
+1. **Install** (once; downloads the packages and the two models, checks everything, and creates shortcuts). In PowerShell, in the project folder:
 
-The script creates its output directories at module import. Unreadable images are skipped, and per-image exceptions are printed.
+   ```powershell
+   powershell -ExecutionPolicy Bypass -File scripts\install.ps1
+   ```
 
-### 2. OCR
+   Options: `-Autostart` (start with Windows), `-NoShortcuts`, `-SkipModels`, `-RemoveShortcuts`.
 
-`perform_ocr(input_folder, output_file)` reads `cleaned_bill_images/grayscale` and calls `pytesseract.image_to_string(..., config="--psm 4")`. Source comments identify grayscale and PSM 4 as the preferred settings from earlier manual comparisons; no accuracy benchmark is included.
+2. **Start:** double-click **Chat With Your Bills** on the desktop. It starts Ollama and the app in the background and opens http://127.0.0.1:8000. Stop it with **Stop Chat With Your Bills** in the Start menu.
 
-Each receipt is written using this format:
+3. **Use it on your phone** (optional): install [Tailscale](https://tailscale.com/download) on the computer and the phone with the same account, then once:
 
-```text
--- Text from receipt_1.jpeg --
-OCR text for this receipt
-```
+   ```powershell
+   powershell -ExecutionPolicy Bypass -File scripts\phone-access.ps1
+   ```
 
-The complete output overwrites `extracted_text.txt`. A missing input folder causes an early return. Individual OCR failures are logged and processing continues; an existing folder with no successful results can produce an empty output file.
+   Open the address shown on the app's **System** page (or scan its QR code) and install the app from the browser. Step by step: [docs/PHONE_SETUP.md](docs/PHONE_SETUP.md).
 
-### 3. Invoice extraction
+On a laptop, keep the charger plugged in: on battery Windows slows the processor and a receipt can take many times longer.
 
-`parser.parse_multiple_invoices()` splits the text on `-- Text from ` and passes each receipt's text to `ollama_1.get_json_from_prompt()`.
-
-The extraction wrapper sends the prompt through standard input to `ollama run qwen3:4b`. Its response parser removes Markdown fences and finds the first balanced JSON object, accounting for quoted strings and escapes. It then decodes JSON and checks that the result is a dictionary.
-
-The prompt requests only explicitly present information, uses `"Unknown"` for uncertain fields, excludes totals/taxes and other non-item labels from descriptions, and asks for equally sized `Description` and `Amount` arrays. These are prompt instructions, **not a runtime schema validator**. The `JSON_SCHEMA` constant is a dictionary of field descriptions rather than a formal JSON Schema.
-
-### 4. Expense classification
-
-For every paired description and amount, the parser calls `get_category_from_ollama()` through `ollama run qwen3:0.6b`. Allowed categories are:
-
-- Food
-- Logistics
-- Drinks
-- Travel
-- Grocery Expense
-- Utilities
-- Other
-
-The prompt places rent and rental payments in Utilities. Response handling removes terminal escape sequences, some thinking-output markers, quotes, and Markdown characters. It tries exact matches, whole-line matches, and a category at the end of the response.
-
-Blank input, empty model output, or an unrecognized category returns `Other`. Process startup, communication, or nonzero-exit failures return `Uncategorized LLM Error`, which is outside the normal category list.
-
-### 5. Result assembly
-
-The parser replaces the original `Description` string array with dictionaries containing `service_description`, `Amount`, and `Category`. It adds `source_file` and retains the original top-level `Amount` array.
-
-Illustrative output shape, not a verified model result:
-
-```json
-[
-  {
-    "Invoice_No": "INV-001",
-    "Issue_Date": "2026-09-01",
-    "billed_to": "Unknown",
-    "billed_by": "Example Store",
-    "Description": [
-      {
-        "service_description": "Bottled water",
-        "Amount": 20,
-        "Category": "Drinks"
-      }
-    ],
-    "Amount": [20],
-    "Grand_Total": 20,
-    "source_file": "receipt_1.jpeg"
-  }
-]
-```
-
-The function returns a list; running `parser.py` prints that list with `json.dumps(..., indent=4)` alongside progress messages. Redirecting its entire standard output therefore does not create a clean JSON document.
-
-## Setup and execution
-
-### Prerequisites
-
-- Python 3.10 or newer, as required by the `str | None` annotation in the source. Dependency compatibility has not been verified across Python versions.
-- Python packages `opencv-python` and `pytesseract`.
-- A separate Tesseract OCR installation. Both OCR scripts currently hard-code `C:\Program Files\Tesseract-OCR\tesseract.exe`; adjust these assignments if your installation differs.
-- Ollama installed, available on `PATH`, and running, with the `qwen3:4b` and `qwen3:0.6b` models available locally.
-
-There is no dependency manifest or lockfile in the current directory. The remaining imports use Python's standard library, including `sqlite3`; the project does not use an Ollama Python SDK.
-
-### Windows PowerShell
-
-Run commands from the project root because all data paths resolve relative to the current working directory.
+<details>
+<summary>Manual setup (other systems, or without the scripts)</summary>
 
 ```powershell
 python -m venv .venv
-.\.venv\Scripts\python.exe -m pip install opencv-python pytesseract
-
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
 ollama pull qwen3:4b
-ollama pull qwen3:0.6b
-
-.\.venv\Scripts\python.exe image_cleaning.py
-.\.venv\Scripts\python.exe ocr_processor.py
-.\.venv\Scripts\python.exe parser.py
+ollama pull glm-ocr
+.\.venv\Scripts\python.exe -m app.cli check     # everything installed and working?
+.\.venv\Scripts\python.exe -m app.cli serve     # then open http://127.0.0.1:8000
 ```
 
-Place new receipt images in `bill_image/` before preprocessing. Model downloads require network access and disk space. Model execution uses the local Ollama CLI. If the Ollama service is not running, start it before parsing.
+On macOS/Linux use `.venv/bin/python`. The shortcuts and PowerShell scripts are Windows-only; the app itself is plain Python.
+</details>
 
-To parse the existing OCR text without repeating image processing:
+## The app
 
-```powershell
-.\.venv\Scripts\python.exe parser.py
-```
-
-Optional database setup and inspection:
-
-```powershell
-.\.venv\Scripts\python.exe table_creation.py
-.\.venv\Scripts\python.exe check_database.py
-```
-
-These commands create or inspect the schema; they do not insert parsed invoices.
-
-## Database schema
-
-`table_creation.py` defines `ocr_line_items` in `ocr_master.db`:
-
-| Column | SQLite type | Constraint or intended content |
-| --- | --- | --- |
-| `Invoice_No` | TEXT | NOT NULL; first part of the primary key. |
-| `line_item_id` | INTEGER | NOT NULL; second part of the primary key. |
-| `Issue_Date` | TEXT | Invoice date. |
-| `billed_to` | TEXT | Customer or billed party. |
-| `billed_by` | TEXT | Issuer or vendor. |
-| `Description` | TEXT | Individual line-item description. |
-| `Category` | TEXT | Expense category. |
-| `Amount` | REAL | Individual line-item amount. |
-| `Grand_Total` | REAL | Invoice total. |
-| `source_file` | TEXT | Original image filename. |
-
-The composite primary key is `(Invoice_No, line_item_id)`. The parser does not generate `line_item_id` or implement an insertion mapping. Future persistence must handle unknown invoice numbers, duplicate invoice numbers across vendors, and conversion of uncertain monetary values. Summing a repeated `Grand_Total` across line-item rows would overcount invoice totals.
-
-Both database utilities execute at module import rather than behind a `__main__` guard. `CREATE TABLE IF NOT EXISTS` does not migrate an existing table. `check_database.py` displays schema metadata, not stored receipt rows.
-
-## Manual checks and troubleshooting
-
-```powershell
-# Compare OCR segmentation settings; results are printed for visual review.
-.\.venv\Scripts\python.exe ocr_processor_test.py
-
-# Exercise extraction with the built-in sample invoice.
-.\.venv\Scripts\python.exe ollama_1.py
-
-# Exercise classification with the built-in rental-bill example.
-.\.venv\Scripts\python.exe ollama_2.py
-```
-
-These are manual checks, not an assertion-based automated test suite.
-
-| Symptom | What to check |
+| Page | What it is for |
 | --- | --- |
-| OCR input folder or OCR text is missing | Run the preceding pipeline stage and check the working directory. |
-| Tesseract cannot be started | Confirm its installation and the executable path in both OCR scripts. |
-| Ollama is not found | Ensure the CLI is installed and on the current shell's `PATH`. |
-| Invoice extraction fails | Read the printed error; verify model availability and the returned JSON. The parser skips failed sections and continues. |
-| Parsing returns an empty list | Check that OCR text is nonempty and uses the expected filename markers; inspect extraction errors. |
-| Classification returns an error label | Check the Ollama process error printed before `Uncategorized LLM Error`. |
-| Database has no newly parsed data | Automatic insertion is not implemented. |
+| **Upload** | Drop or choose photos, **Take photo** (phone camera), **Use webcam** (live camera with a guide frame and a quality check). Each upload gets a live progress card. Large photos are shrunk on the phone before sending. |
+| **Receipts** | All receipts with status (verified / needs review / failed), filters and search; "Reprocess all failed". |
+| **Receipt** | Photo next to editable fields and items; warnings, automatic repairs, both OCR readings side by side, time per stage; Save, Reprocess, Reprocess with the vision model, **Save as test case**, Delete. |
+| **Dashboard** | Total spent, by category, by shop, by month; date ranges; one currency at a time. |
+| **Chat** | Questions about your spending; each answer shows the query used, its arguments and the database rows. |
+| **Lab** | Run one stage at a time (preprocess, OCR, vision OCR, extraction) on any photo or text. |
+| **Evaluation** | Run the scored test sets and compare reports. |
+| **System** | Ollama and models, worker, database, phone access (address + QR code), **Your data** (CSV, JSON, full backup), settings. |
 
-## Current limitations and extension points
+Light and dark themes; on a phone, a bottom navigation bar and an installable app that opens full screen.
 
-- Processing is sequential: one extraction CLI invocation per receipt and one classification invocation per paired line item. There are no subprocess timeouts, retries, or caching.
-- `zip(Description, Amount)` silently drops unmatched entries when array lengths differ. Types, required fields, dates, numeric amounts, and totals are not validated.
-- Filename separators form an informal text format; malformed sections or filenames containing `--` can interfere with parsing.
-- Directory traversal is unsorted, and preprocessing does not remove stale outputs. Removed source images can remain available to later OCR runs.
-- OCR and model output can contain errors despite conservative prompting. No measured extraction or categorization accuracy is supplied.
-- Configuration is embedded in individual scripts; there is no central configuration, orchestration command, or dependency lockfile.
-- The current supported inputs are images, with no PDF ingestion.
-- Structured results are neither saved to a JSON file nor inserted into SQLite. Chat, search, reporting, and a UI remain future work.
+## How it works
 
-Natural places to extend the project are runtime validation after extraction, an explicit JSON export, a database writer that maps each enriched description to a row, and then a query/chat layer over persisted invoices. These are proposed extensions, not implemented features.
+```text
+Photo ─► store (named by SHA-256; the same photo twice = the same receipt)
+  ▼
+Preprocess (OpenCV)         quality checks (blur, light, size), find and crop the receipt     < 1 s
+  ▼
+OCR (RapidOCR, PP-OCRv6)    text lines in reading order, with confidence                       2–5 s
+  ▼
+Extract (qwen3:4b)          one call, answer forced into a JSON schema: header, items + category 30–60 s
+  ▼
+Validate (Python)           normalize, arithmetic and "is it printed?" checks, safe repairs      instant
+  │  problems? → vision re-read (glm-ocr) → extract → validate → keep the more consistent reading
+  ▼
+SQLite                      status: verified | needs review | failed
+```
 
-## Documentation verification
+- **Never trust the model blindly.** The model copies values; Python checks them: items vs. subtotal vs. total (with or without tax, service charge and discount), quantity × price, paid − change, and that every amount appears in the OCR text. Known model mistakes are repaired only when the arithmetic proves the repair (e.g. the total taken from the cash handed over). Anything else becomes a warning.
+- **One worker, one receipt at a time:** the CPU is the bottleneck, so parallel jobs would only slow each other down. Jobs survive page reloads; a job interrupted by stopping the app is marked failed at the next start; a stopped Ollama is started by the worker.
+- **Chat without generated SQL:** qwen3:4b picks one of eight fixed query functions (total, by category, by shop, over time, largest purchases, find a product, list receipts, one receipt) through a JSON schema; Python turns "last month" or "since July" into dates, matches shop names, runs parameterized SQL and writes the answer from the rows.
+- **Phone access:** `tailscale serve` makes the app available over https to your own Tailscale devices only; the app checks each forwarded request belongs to the computer's Tailscale owner and refuses public (Funnel) traffic.
+- **Speed:** the models use all physical CPU cores (10 on the i7-1355U), 9% faster than Ollama's default in an A/B test.
 
-This guide was prepared by inspecting all ten Python source files and the directory layout. The database schema above comes from `table_creation.py`; existing database contents were not audited. OCR, model inference, installation commands, and the full pipeline were not executed as part of this documentation work.
-#   c h a t _ w i t h _ y o u r _ b i l l s 
- 
- 
+The reasoning, measurements and alternatives for each part are in the [phase reports](reports/README.md).
+
+## Project layout
+
+```text
+app/
+  main.py            FastAPI app (API + the web pages), access rules
+  cli.py             command line: serve, check, process, list, show, export, backup, restore, ocr
+  config.py          all settings (BILLS_* environment variables or .env)
+  pipeline/          preprocess, ocr_rapid, ocr_vlm, extract, validate, normalize, reconcile, run
+  llm/               Ollama client (timeouts, threads, starting Ollama) and prompts
+  chat/              chat: date phrases, query functions, agent
+  db/                SQLite schema/migrations and all SQL
+  api/               HTTP endpoints (receipts, jobs, stats, chat, export, lab, eval, system)
+  worker.py          background processing queue
+  access.py          who may connect (this computer, Tailscale owner, Wi-Fi access key)
+  export.py          CSV, JSON, backup and restore
+  test_cases.py      real receipts saved as evaluation test cases
+  logs.py            data/logs/app.log, receipts.jsonl, server.log
+frontend/            plain HTML/CSS/JavaScript, no build step (+ manifest and service worker)
+scripts/             Windows install/start/stop/phone-access scripts, icons
+eval/                scoring, ground truth (hand-checked answers), chat questions
+tests/               pytest (no Ollama needed)
+docs/                implementation plan, phone plan, phone setup guide
+reports/             one report per phase: what, how, why, results
+data/                (not in git) database, uploaded photos, logs, archive
+samples/             (not in git) test images, real receipts saved as test cases
+```
+
+## Configuration
+
+Settings are read from environment variables `BILLS_<NAME>` or a `.env` file in the project folder (copy [.env.example](.env.example)); restart the app after a change. The System page lists the current values. The ones most often changed:
+
+| Setting | Default | Meaning |
+| --- | --- | --- |
+| `BILLS_EXTRACT_MODEL` | `qwen3:4b` | Model that turns OCR text into data (and answers chat) |
+| `BILLS_VLM_MODEL` | `glm-ocr` | Vision model for the second reading |
+| `BILLS_VLM_MODE` | `auto` | `auto`: re-read only receipts that fail the checks; `always`; `never` |
+| `BILLS_NUM_THREAD` | all physical cores | CPU threads for the models |
+| `BILLS_EXTRACT_TIMEOUT_S` | `180` | Give up on one extraction after this many seconds |
+| `BILLS_START_OLLAMA` | `true` | Start a local Ollama that is not running |
+| `BILLS_OLLAMA_HOST` | `http://localhost:11434` | Ollama address |
+| `BILLS_CHAT_REPHRASE` | `false` | Reword chat answers with a second model call (~15 s more; numbers are checked) |
+| `BILLS_MAX_UPLOAD_MB` | `15` | Largest photo accepted |
+| `BILLS_DB_PATH`, `BILLS_UPLOADS_DIR`, `BILLS_LOG_DIR` | `data\...` | Where data is stored |
+
+All settings, with the measurements behind their defaults: [app/config.py](app/config.py).
+
+## Command line
+
+```powershell
+.\.venv\Scripts\python.exe -m app.cli check                          # is everything installed and working?
+.\.venv\Scripts\python.exe -m app.cli serve [--lan] [--port 8000]    # start the app (--lan: phones on the same Wi-Fi, with an access key)
+.\.venv\Scripts\python.exe -m app.cli process photos\ --save         # process a folder without the web app
+.\.venv\Scripts\python.exe -m app.cli list --status needs_review     # stored receipts (--category, --vendor, --from, --to, --search)
+.\.venv\Scripts\python.exe -m app.cli show 12                        # one receipt as JSON
+.\.venv\Scripts\python.exe -m app.cli export --out data.json         # everything as JSON
+.\.venv\Scripts\python.exe -m app.cli backup                         # database + photos in one ZIP
+.\.venv\Scripts\python.exe -m app.cli restore bills-backup-<date>.zip  # with the app stopped; keeps the old database
+.\.venv\Scripts\python.exe -m app.cli ocr photo.jpg                  # OCR only
+```
+
+The HTTP API is documented at http://127.0.0.1:8000/docs while the app runs.
+
+## Evaluation and tests
+
+```powershell
+.\.venv\Scripts\python.exe -m pytest                                              # 150+ tests, no Ollama needed
+.\.venv\Scripts\python.exe -m eval.run_eval extraction --name my-run --pipeline --set dev --set test
+.\.venv\Scripts\python.exe -m eval.run_eval chat --name my-chat                   # 32 chat questions
+.\.venv\Scripts\python.exe -m eval.run_eval ocr --name my-ocr --rapid
+```
+
+The same runs can be started from the **Evaluation** page. Reports go to `eval/results/`. The test sets: `tuning` (3 older photos), `dev` (01–10, may be tuned on), `test` (11–20, never tuned on) and `real`: receipts you saved with **Save as test case** after checking every field against the photo (kept out of git, as they hold personal data). The test images themselves are not in the repository; the hand-checked answers are (`eval/ground_truth/`).
+
+## Troubleshooting
+
+| Problem | What to do |
+| --- | --- |
+| Red banner "Ollama is not running" | Start the Ollama app (the worker also tries). Then **Receipts → Reprocess all failed**. |
+| "Model … is not installed" | `ollama pull qwen3:4b` (and `ollama pull glm-ocr`). |
+| "Timed out" or very slow | Plug in the charger; close heavy programs; a 15-item receipt with a re-read takes ~6 min. |
+| A receipt is "needs review" | Open it: the warnings say what does not add up. Correct the fields and Save (or Reprocess with the vision model). |
+| Receipt failed: "Interrupted" | The app was stopped while processing it; Reprocess. |
+| Phone cannot connect | See the troubleshooting table in [docs/PHONE_SETUP.md](docs/PHONE_SETUP.md). |
+| Anything else | System page; `python -m app.cli check`; logs in `data\logs\` (`app.log`: one line per receipt and any errors). |
+
+## Data and privacy
+
+Everything stays on your computer: the database (`data\bills.db`), the photos (`data\uploads\`), logs, backups. No receipt, photo or question is sent to any online service; the models run in Ollama on the same computer. Phone access goes over Tailscale between your own devices. `data/`, `samples/` and real test cases are excluded from git.
+
+## Documentation
+
+- [docs/PHONE_SETUP.md](docs/PHONE_SETUP.md): using the app on your phone, step by step.
+- [reports/](reports/README.md): one report per phase (what was built, how, why, measured results).
+- [docs/IMPLEMENTATION_PLAN.md](docs/IMPLEMENTATION_PLAN.md): the plan the rebuild followed, with the decisions taken.
+- [docs/PHONE_PLAN.md](docs/PHONE_PLAN.md): the plan for phone use.
+
+The project began as a Tesseract-based prototype; it was replaced in this rebuild (its code is in the git history before Phase 9, and the comparison is in [reports/phase-0-foundation.md](reports/phase-0-foundation.md)).
+
+## Limitations
+
+- CPU only: about a minute per receipt. A GPU would make it many times faster but is not supported in this version.
+- Faded or handwritten receipts are flagged, not read correctly.
+- Item categories are right ~85% of the time; correct them on the receipt page (the dashboard follows).
+- One user; phone access needs the computer to be on, awake and running the app.
+- Photos only (JPEG, PNG, WEBP); no PDF invoices yet.
