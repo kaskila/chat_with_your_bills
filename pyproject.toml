@@ -1,0 +1,9 @@
+[project]
+name = "chat-with-your-bills"
+version = "0.1.0"
+description = "Receipt photos to validated, categorized spending data you can ask questions about. Runs locally on CPU."
+requires-python = ">=3.12"
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]

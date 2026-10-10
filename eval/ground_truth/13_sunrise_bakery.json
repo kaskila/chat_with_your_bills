@@ -1,0 +1,60 @@
+{
+  "image": "test/13_sunrise_bakery.jpg",
+  "set": "test",
+  "expected": {
+    "vendor": "SUNRISE BAKERY",
+    "vendor_tax_id": null,
+    "receipt_no": "719665",
+    "date": "2026-10-08",
+    "time": null,
+    "currency": "ZMW",
+    "items": [
+      {
+        "description": "Meat pie",
+        "quantity": 2,
+        "unit_price": null,
+        "amount": 36.0,
+        "category": "Food"
+      },
+      {
+        "description": "Scones 6pk",
+        "quantity": null,
+        "unit_price": null,
+        "amount": 30.0,
+        "category": "Food"
+      },
+      {
+        "description": "Brown loaf",
+        "quantity": null,
+        "unit_price": null,
+        "amount": 22.0,
+        "category": "Grocery"
+      }
+    ],
+    "subtotal": null,
+    "discount": null,
+    "service_charge": null,
+    "tax": null,
+    "total": 88.0,
+    "payment_method": "Cash"
+  },
+  "accept": {
+    "items[0].category": [
+      "Grocery"
+    ],
+    "items[1].category": [
+      "Grocery"
+    ],
+    "items[1].unit_price": [
+      30.0
+    ],
+    "items[2].category": [
+      "Food"
+    ],
+    "items[2].unit_price": [
+      22.0
+    ]
+  },
+  "skip": {},
+  "notes": ""
+}

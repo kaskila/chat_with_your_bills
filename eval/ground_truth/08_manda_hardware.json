@@ -1,0 +1,51 @@
+{
+  "image": "test/08_manda_hardware.jpg",
+  "set": "dev",
+  "expected": {
+    "vendor": "MANDA HARDWARE & PAINTS",
+    "vendor_tax_id": null,
+    "receipt_no": "785687",
+    "date": "2026-10-02",
+    "time": "14:28",
+    "currency": "ZMW",
+    "items": [
+      {
+        "description": "Wall paint 5L white",
+        "quantity": 2,
+        "unit_price": 385.0,
+        "amount": 770.0,
+        "category": "Other"
+      },
+      {
+        "description": "Paint brush 4in",
+        "quantity": 3,
+        "unit_price": 42.0,
+        "amount": 126.0,
+        "category": "Other"
+      },
+      {
+        "description": "Masking tape",
+        "quantity": 2,
+        "unit_price": 18.5,
+        "amount": 37.0,
+        "category": "Other"
+      },
+      {
+        "description": "Sandpaper pack",
+        "quantity": 1,
+        "unit_price": 29.0,
+        "amount": 29.0,
+        "category": "Other"
+      }
+    ],
+    "subtotal": 829.31,
+    "discount": null,
+    "service_charge": null,
+    "tax": 132.69,
+    "total": 962.0,
+    "payment_method": "Card"
+  },
+  "accept": {},
+  "skip": {},
+  "notes": ""
+}

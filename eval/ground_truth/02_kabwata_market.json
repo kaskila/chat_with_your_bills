@@ -1,0 +1,58 @@
+{
+  "image": "test/02_kabwata_market.jpg",
+  "set": "dev",
+  "expected": {
+    "vendor": "KABWATA FRESH MARKET",
+    "vendor_tax_id": null,
+    "receipt_no": "996580",
+    "date": "2026-10-05",
+    "time": null,
+    "currency": "ZMW",
+    "items": [
+      {
+        "description": "Onions",
+        "quantity": 2,
+        "unit_price": null,
+        "amount": 30.0,
+        "category": "Grocery"
+      },
+      {
+        "description": "Rape leaves",
+        "quantity": 3,
+        "unit_price": null,
+        "amount": 15.0,
+        "category": "Grocery"
+      },
+      {
+        "description": "Kapenta 500g",
+        "quantity": null,
+        "unit_price": null,
+        "amount": 85.0,
+        "category": "Grocery"
+      },
+      {
+        "description": "Irish potatoes",
+        "quantity": null,
+        "unit_price": null,
+        "amount": 40.0,
+        "category": "Grocery"
+      }
+    ],
+    "subtotal": null,
+    "discount": null,
+    "service_charge": null,
+    "tax": null,
+    "total": 170.0,
+    "payment_method": "Cash"
+  },
+  "accept": {
+    "items[2].unit_price": [
+      85.0
+    ],
+    "items[3].unit_price": [
+      40.0
+    ]
+  },
+  "skip": {},
+  "notes": "Tendered 200, change not printed."
+}

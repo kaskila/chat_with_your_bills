@@ -1,0 +1,55 @@
+{
+  "image": "test/07_healthplus_pharmacy.jpg",
+  "set": "dev",
+  "expected": {
+    "vendor": "HEALTHPLUS PHARMACY",
+    "vendor_tax_id": null,
+    "receipt_no": "143914",
+    "date": "2026-09-22",
+    "time": null,
+    "currency": "ZMW",
+    "items": [
+      {
+        "description": "Paracetamol 500mg x20",
+        "quantity": 2,
+        "unit_price": 18.0,
+        "amount": 36.0,
+        "category": "Other"
+      },
+      {
+        "description": "Vitamin C 1000mg",
+        "quantity": 1,
+        "unit_price": 145.0,
+        "amount": 145.0,
+        "category": "Other"
+      },
+      {
+        "description": "Hand sanitiser 250ml",
+        "quantity": 1,
+        "unit_price": 55.0,
+        "amount": 55.0,
+        "category": "Other"
+      },
+      {
+        "description": "Plasters box",
+        "quantity": 1,
+        "unit_price": 22.5,
+        "amount": 22.5,
+        "category": "Other"
+      }
+    ],
+    "subtotal": 258.5,
+    "discount": null,
+    "service_charge": null,
+    "tax": 41.36,
+    "total": 299.86,
+    "payment_method": "Cash"
+  },
+  "accept": {
+    "items[2].category": [
+      "Grocery"
+    ]
+  },
+  "skip": {},
+  "notes": "Item text overlaps the price column. No health category yet -> Other."
+}

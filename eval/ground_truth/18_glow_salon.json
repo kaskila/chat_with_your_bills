@@ -1,0 +1,44 @@
+{
+  "image": "test/18_glow_salon.jpg",
+  "set": "test",
+  "expected": {
+    "vendor": "GLOW BEAUTY SALON",
+    "vendor_tax_id": null,
+    "receipt_no": "430592",
+    "date": "2026-09-12",
+    "time": null,
+    "currency": "ZMW",
+    "items": [
+      {
+        "description": "Braiding",
+        "quantity": null,
+        "unit_price": null,
+        "amount": 350.0,
+        "category": "Other"
+      },
+      {
+        "description": "Hair treatment",
+        "quantity": null,
+        "unit_price": null,
+        "amount": 120.0,
+        "category": "Other"
+      }
+    ],
+    "subtotal": null,
+    "discount": null,
+    "service_charge": null,
+    "tax": null,
+    "total": 470.0,
+    "payment_method": "Mobile Money"
+  },
+  "accept": {
+    "items[0].unit_price": [
+      350.0
+    ],
+    "items[1].unit_price": [
+      120.0
+    ]
+  },
+  "skip": {},
+  "notes": ""
+}

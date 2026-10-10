@@ -1,0 +1,51 @@
+{
+  "image": "test/19_campus_books.jpg",
+  "set": "test",
+  "expected": {
+    "vendor": "CAMPUS BOOKS & STATIONERY",
+    "vendor_tax_id": null,
+    "receipt_no": "131197",
+    "date": "2026-10-04",
+    "time": null,
+    "currency": "ZMW",
+    "items": [
+      {
+        "description": "Notebook A4 (5)",
+        "quantity": 2,
+        "unit_price": null,
+        "amount": 96.0,
+        "category": "Office & Stationery"
+      },
+      {
+        "description": "Pens blue 10pk",
+        "quantity": null,
+        "unit_price": null,
+        "amount": 35.0,
+        "category": "Office & Stationery"
+      },
+      {
+        "description": "Calculator",
+        "quantity": null,
+        "unit_price": null,
+        "amount": 210.0,
+        "category": "Office & Stationery"
+      }
+    ],
+    "subtotal": 341.0,
+    "discount": null,
+    "service_charge": null,
+    "tax": 54.56,
+    "total": 395.56,
+    "payment_method": "Card"
+  },
+  "accept": {
+    "items[1].unit_price": [
+      35.0
+    ],
+    "items[2].unit_price": [
+      210.0
+    ]
+  },
+  "skip": {},
+  "notes": "Every amount is printed one line BELOW its label (96.00 belongs to Notebook, 341.00 to SUBTOTAL...)."
+}

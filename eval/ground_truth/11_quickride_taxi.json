@@ -1,0 +1,44 @@
+{
+  "image": "test/11_quickride_taxi.jpg",
+  "set": "test",
+  "expected": {
+    "vendor": "QUICKRIDE",
+    "vendor_tax_id": null,
+    "receipt_no": "299447",
+    "date": "2026-10-06",
+    "time": "08:02",
+    "currency": "ZMW",
+    "items": [
+      {
+        "description": "Trip: Woodlands to Cairo Rd",
+        "quantity": null,
+        "unit_price": null,
+        "amount": 68.0,
+        "category": "Travel"
+      },
+      {
+        "description": "Waiting time",
+        "quantity": null,
+        "unit_price": null,
+        "amount": 6.0,
+        "category": "Travel"
+      }
+    ],
+    "subtotal": null,
+    "discount": null,
+    "service_charge": null,
+    "tax": null,
+    "total": 74.0,
+    "payment_method": "Mobile Money"
+  },
+  "accept": {
+    "items[0].unit_price": [
+      68.0
+    ],
+    "items[1].unit_price": [
+      6.0
+    ]
+  },
+  "skip": {},
+  "notes": ""
+}

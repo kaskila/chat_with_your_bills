@@ -1,0 +1,66 @@
+{
+  "image": "receipt_2.jpeg",
+  "set": "tuning",
+  "expected": {
+    "vendor": "Grand Palace Hotel Restaurant",
+    "vendor_tax_id": null,
+    "receipt_no": "GPH35206",
+    "date": "2026-08-27",
+    "time": "18:55",
+    "currency": null,
+    "items": [
+      {
+        "description": "Milk shake",
+        "quantity": 2,
+        "unit_price": null,
+        "amount": 160.0,
+        "category": "Drinks"
+      }
+    ],
+    "subtotal": 126.98,
+    "discount": null,
+    "service_charge": 12.7,
+    "tax": 33.02,
+    "total": 160.0,
+    "payment_method": null
+  },
+  "accept": {
+    "vendor": [
+      "Grand Palace Hotel"
+    ],
+    "receipt_no": [
+      "GPH36206"
+    ],
+    "currency": [
+      null,
+      "ZMW"
+    ],
+    "service_charge": [
+      null
+    ],
+    "items[0].unit_price": [
+      null,
+      80.0
+    ],
+    "tax": [
+      20.32
+    ]
+  },
+  "skip": {},
+  "key_values": [
+    "Grand Palace",
+    [
+      "GPH35206",
+      "GPH36206"
+    ],
+    "27/08/2026",
+    "6:55:44",
+    "Milk",
+    "160.00",
+    "126.98",
+    "33.02",
+    "12.70",
+    "20.32"
+  ],
+  "notes": "Receipt number is ambiguous in the photo (5 or 6 in third digit). Tax 33.02 = service charge 12.70 + VAT 20.32, both included in the 160.00 payable. 'Unsettled' = not yet paid, so no payment method. Tax 20.32 (VAT only) is also accepted: valid when the service charge 12.70 is reported separately."
+}

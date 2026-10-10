@@ -1,0 +1,48 @@
+{
+  "image": "test/03_tasty_bites_cafe.jpg",
+  "set": "dev",
+  "expected": {
+    "vendor": "TASTY BITES CAFE",
+    "vendor_tax_id": null,
+    "receipt_no": "942950",
+    "date": "2026-10-03",
+    "time": "11:11",
+    "currency": "ZMW",
+    "items": [
+      {
+        "description": "Chicken Burger",
+        "quantity": 2,
+        "unit_price": null,
+        "amount": 190.0,
+        "category": "Food"
+      },
+      {
+        "description": "Chips Large",
+        "quantity": null,
+        "unit_price": null,
+        "amount": 40.0,
+        "category": "Food"
+      },
+      {
+        "description": "Fresh Juice",
+        "quantity": 2,
+        "unit_price": null,
+        "amount": 70.0,
+        "category": "Drinks"
+      }
+    ],
+    "subtotal": 284.48,
+    "discount": null,
+    "service_charge": 30.0,
+    "tax": 45.52,
+    "total": 330.0,
+    "payment_method": "Card"
+  },
+  "accept": {
+    "items[1].unit_price": [
+      40.0
+    ]
+  },
+  "skip": {},
+  "notes": "Service charge is printed among the item lines; it is a charge, not an item. NET AMOUNT = excl. VAT."
+}

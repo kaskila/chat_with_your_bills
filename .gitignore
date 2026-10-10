@@ -1,0 +1,31 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Local configuration
+.env
+
+# Runtime data: uploads, database, logs
+data/
+*.db
+
+# Evaluation reports (regenerate with eval/run_eval.py)
+eval/results/
+
+# Receipts contain personal data (names, phone numbers, tax IDs, bank details).
+# Remove these lines only if you are sure the images and transcriptions can be shared.
+samples/
+eval/ground_truth/*.txt
+
+# Old prototype outputs
+legacy/cleaned_bill_images/
+legacy/extracted_text.txt
+legacy/ocr_master.db
+
+# Editors / OS
+.vscode/
+.idea/
+Thumbs.db
+.DS_Store

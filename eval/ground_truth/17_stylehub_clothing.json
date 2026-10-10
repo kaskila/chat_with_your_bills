@@ -1,0 +1,41 @@
+{
+  "image": "test/17_stylehub_clothing.jpg",
+  "set": "test",
+  "expected": {
+    "vendor": "STYLEHUB FASHION",
+    "vendor_tax_id": null,
+    "receipt_no": "981029",
+    "date": "2026-08-29",
+    "time": "14:35",
+    "currency": "ZMW",
+    "items": [
+      {
+        "description": "Denim jeans",
+        "quantity": 1,
+        "unit_price": 420.0,
+        "amount": 420.0,
+        "category": "Other"
+      },
+      {
+        "description": "Cotton shirt",
+        "quantity": 2,
+        "unit_price": 185.0,
+        "amount": 370.0,
+        "category": "Other"
+      }
+    ],
+    "subtotal": 612.93,
+    "discount": 79.0,
+    "service_charge": null,
+    "tax": 98.07,
+    "total": 711.0,
+    "payment_method": "Card"
+  },
+  "accept": {
+    "discount": [
+      -79.0
+    ]
+  },
+  "skip": {},
+  "notes": "'Promo discount 1 @ -79.00' is printed as an item line; it is a discount. NET AMOUNT is after discount, excl. VAT."
+}

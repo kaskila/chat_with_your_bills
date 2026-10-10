@@ -1,0 +1,44 @@
+{
+  "image": "test/20_quickfix_repairs.jpg",
+  "set": "test",
+  "expected": {
+    "vendor": "QUICKFIX MOBILE REPAIRS",
+    "vendor_tax_id": null,
+    "receipt_no": "213169",
+    "date": "2026-09-18",
+    "time": null,
+    "currency": "ZMW",
+    "items": [
+      {
+        "description": "Screen replacement",
+        "quantity": null,
+        "unit_price": null,
+        "amount": 650.0,
+        "category": "Other"
+      },
+      {
+        "description": "Labour",
+        "quantity": null,
+        "unit_price": null,
+        "amount": 100.0,
+        "category": "Other"
+      }
+    ],
+    "subtotal": null,
+    "discount": null,
+    "service_charge": null,
+    "tax": null,
+    "total": 750.0,
+    "payment_method": "Cash"
+  },
+  "accept": {
+    "items[0].unit_price": [
+      650.0
+    ],
+    "items[1].unit_price": [
+      100.0
+    ]
+  },
+  "skip": {},
+  "notes": ""
+}

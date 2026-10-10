@@ -1,0 +1,71 @@
+{
+  "image": "test/01_mukuba_supermart.jpg",
+  "set": "dev",
+  "expected": {
+    "vendor": "MUKUBA SUPERMART",
+    "vendor_tax_id": null,
+    "receipt_no": "686963",
+    "date": "2026-10-07",
+    "time": "15:55",
+    "currency": "ZMW",
+    "items": [
+      {
+        "description": "Brown Bread 700g",
+        "quantity": 2,
+        "unit_price": null,
+        "amount": 49.0,
+        "category": "Grocery"
+      },
+      {
+        "description": "Fresh Milk 1L",
+        "quantity": 3,
+        "unit_price": null,
+        "amount": 93.0,
+        "category": "Grocery"
+      },
+      {
+        "description": "Eggs Tray 30",
+        "quantity": null,
+        "unit_price": null,
+        "amount": 98.0,
+        "category": "Grocery"
+      },
+      {
+        "description": "Cooking Oil 2L",
+        "quantity": null,
+        "unit_price": null,
+        "amount": 112.9,
+        "category": "Grocery"
+      },
+      {
+        "description": "Tomatoes 1kg",
+        "quantity": null,
+        "unit_price": null,
+        "amount": 22.0,
+        "category": "Grocery"
+      }
+    ],
+    "subtotal": 374.9,
+    "discount": null,
+    "service_charge": null,
+    "tax": 59.98,
+    "total": 434.88,
+    "payment_method": "Card"
+  },
+  "accept": {
+    "items[1].category": [
+      "Drinks"
+    ],
+    "items[2].unit_price": [
+      98.0
+    ],
+    "items[3].unit_price": [
+      112.9
+    ],
+    "items[4].unit_price": [
+      22.0
+    ]
+  },
+  "skip": {},
+  "notes": ""
+}

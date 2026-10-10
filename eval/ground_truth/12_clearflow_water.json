@@ -1,0 +1,44 @@
+{
+  "image": "test/12_clearflow_water.png",
+  "set": "test",
+  "expected": {
+    "vendor": "CLEARFLOW WATER UTILITY",
+    "vendor_tax_id": null,
+    "receipt_no": "131543",
+    "date": "2026-09-15",
+    "time": null,
+    "currency": "ZMW",
+    "items": [
+      {
+        "description": "Water charges - Aug",
+        "quantity": null,
+        "unit_price": null,
+        "amount": 212.4,
+        "category": "Utilities"
+      },
+      {
+        "description": "Sewer charges",
+        "quantity": null,
+        "unit_price": null,
+        "amount": 64.1,
+        "category": "Utilities"
+      }
+    ],
+    "subtotal": null,
+    "discount": null,
+    "service_charge": null,
+    "tax": null,
+    "total": 276.5,
+    "payment_method": "Bank Transfer"
+  },
+  "accept": {
+    "items[0].unit_price": [
+      212.4
+    ],
+    "items[1].unit_price": [
+      64.1
+    ]
+  },
+  "skip": {},
+  "notes": ""
+}

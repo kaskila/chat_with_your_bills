@@ -1,0 +1,48 @@
+{
+  "image": "test/16_mama_nkandu_kitchen.jpg",
+  "set": "test",
+  "expected": {
+    "vendor": "MAMA NKANDU'S KITCHEN",
+    "vendor_tax_id": null,
+    "receipt_no": "786609",
+    "date": "2026-09-30",
+    "time": null,
+    "currency": "ZMW",
+    "items": [
+      {
+        "description": "Nshima + Kapenta",
+        "quantity": 2,
+        "unit_price": null,
+        "amount": 110.0,
+        "category": "Food"
+      },
+      {
+        "description": "Chicken stew",
+        "quantity": null,
+        "unit_price": null,
+        "amount": 70.0,
+        "category": "Food"
+      },
+      {
+        "description": "Mazoe orange",
+        "quantity": 2,
+        "unit_price": null,
+        "amount": 30.0,
+        "category": "Drinks"
+      }
+    ],
+    "subtotal": null,
+    "discount": null,
+    "service_charge": null,
+    "tax": null,
+    "total": 210.0,
+    "payment_method": "Cash"
+  },
+  "accept": {
+    "items[1].unit_price": [
+      70.0
+    ]
+  },
+  "skip": {},
+  "notes": ""
+}

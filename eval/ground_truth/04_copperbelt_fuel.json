@@ -1,0 +1,43 @@
+{
+  "image": "test/04_copperbelt_fuel.jpg",
+  "set": "dev",
+  "expected": {
+    "vendor": "COPPERBELT FUEL STATION",
+    "vendor_tax_id": null,
+    "receipt_no": "743782",
+    "date": "2026-09-28",
+    "time": "15:40",
+    "currency": "ZMW",
+    "items": [
+      {
+        "description": "Diesel 38.40 L",
+        "quantity": 1,
+        "unit_price": 884.35,
+        "amount": 884.35,
+        "category": "Travel"
+      }
+    ],
+    "subtotal": 762.37,
+    "discount": null,
+    "service_charge": null,
+    "tax": 121.98,
+    "total": 884.35,
+    "payment_method": "Card"
+  },
+  "accept": {
+    "items[0].quantity": [
+      null,
+      38.4
+    ],
+    "items[0].unit_price": [
+      null,
+      23.03
+    ],
+    "items[0].category": [
+      "Other",
+      "Logistics"
+    ]
+  },
+  "skip": {},
+  "notes": ""
+}

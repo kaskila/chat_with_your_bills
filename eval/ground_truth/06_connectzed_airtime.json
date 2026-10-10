@@ -1,0 +1,44 @@
+{
+  "image": "test/06_connectzed_airtime.png",
+  "set": "dev",
+  "expected": {
+    "vendor": "CONNECTZED",
+    "vendor_tax_id": null,
+    "receipt_no": "948973",
+    "date": "2026-10-08",
+    "time": "09:34",
+    "currency": "ZMW",
+    "items": [
+      {
+        "description": "Monthly Data Bundle 10GB",
+        "quantity": null,
+        "unit_price": null,
+        "amount": 150.0,
+        "category": "Utilities"
+      },
+      {
+        "description": "Airtime top-up",
+        "quantity": null,
+        "unit_price": null,
+        "amount": 20.0,
+        "category": "Utilities"
+      }
+    ],
+    "subtotal": null,
+    "discount": null,
+    "service_charge": null,
+    "tax": null,
+    "total": 170.0,
+    "payment_method": "Mobile Money"
+  },
+  "accept": {
+    "items[0].unit_price": [
+      150.0
+    ],
+    "items[1].unit_price": [
+      20.0
+    ]
+  },
+  "skip": {},
+  "notes": ""
+}

@@ -1,0 +1,53 @@
+{
+  "image": "receipt_3.jpeg",
+  "set": "tuning",
+  "expected": {
+    "vendor": "Six Light Media Limited",
+    "vendor_tax_id": "1002131502",
+    "receipt_no": "46541",
+    "date": "2026-07-21",
+    "time": "10:48",
+    "currency": "ZMW",
+    "items": [
+      {
+        "description": "Binding Spiral 6mm-20mm (A)",
+        "quantity": 2,
+        "unit_price": 25,
+        "amount": 50,
+        "category": "Office & Stationery"
+      }
+    ],
+    "subtotal": 43.1,
+    "discount": null,
+    "service_charge": null,
+    "tax": 6.9,
+    "total": 50,
+    "payment_method": "Card"
+  },
+  "accept": {
+    "receipt_no": [
+      "INV0030000116/43312"
+    ],
+    "currency": [
+      "K"
+    ],
+    "subtotal": [
+      null
+    ]
+  },
+  "skip": {},
+  "key_values": [
+    "SIX LIGHT MEDIA",
+    "1002131502",
+    "46541",
+    "21 Jul",
+    "Binding",
+    "Spiral",
+    "K50",
+    "43.103",
+    "6.897",
+    "Card",
+    "INV0030000116/43312"
+  ],
+  "notes": "'46' before the item name is an item code. Prices include 16% VAT: excl. total 43.103 + tax 6.897 = 50. Subtotal here means the VAT-exclusive total."
+}

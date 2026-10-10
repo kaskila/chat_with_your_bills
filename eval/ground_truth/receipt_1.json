@@ -1,0 +1,53 @@
+{
+  "image": "receipt_1.jpeg",
+  "set": "tuning",
+  "expected": {
+    "vendor": "HELLO KAI",
+    "vendor_tax_id": "2883928397",
+    "receipt_no": null,
+    "date": "2026-08-28",
+    "time": "11:25",
+    "currency": null,
+    "items": [
+      {
+        "description": "goods",
+        "quantity": 3,
+        "unit_price": 490,
+        "amount": 1470,
+        "category": "Other"
+      }
+    ],
+    "subtotal": 1470,
+    "discount": 0,
+    "service_charge": null,
+    "tax": 56.5,
+    "total": 1470,
+    "payment_method": "Cash"
+  },
+  "accept": {
+    "currency": [
+      null,
+      "ZMW"
+    ],
+    "vendor": [
+      "Hello Kai"
+    ]
+  },
+  "skip": {
+    "receipt_no": "Middle digits faded: 'NO:04-2608??0834'."
+  },
+  "key_values": [
+    "HELLO KAI",
+    "2883928397",
+    "2026/8/28",
+    "11:25",
+    "490",
+    "1470",
+    "Discount",
+    "Subtotal",
+    "56.5",
+    "1500",
+    "Change"
+  ],
+  "notes": "Subtotal 1470 and TOT 4% 56.5 are handwritten. TOT (turnover tax) is included in the price, so subtotal + tax != total. 'Total 3' is the item count, not money. Paid cash 1500, change 30."
+}

@@ -1,0 +1,49 @@
+{
+  "image": "test/15_shopzed_online.jpg",
+  "set": "test",
+  "expected": {
+    "vendor": "SHOPZED ONLINE",
+    "vendor_tax_id": null,
+    "receipt_no": "794628",
+    "date": "2026-10-03",
+    "time": null,
+    "currency": "USD",
+    "items": [
+      {
+        "description": "USB-C charging cable",
+        "quantity": 2,
+        "unit_price": 9.99,
+        "amount": 19.98,
+        "category": "Other"
+      },
+      {
+        "description": "Phone case",
+        "quantity": 1,
+        "unit_price": 14.5,
+        "amount": 14.5,
+        "category": "Other"
+      },
+      {
+        "description": "Screen protector",
+        "quantity": 1,
+        "unit_price": 6.0,
+        "amount": 6.0,
+        "category": "Other"
+      }
+    ],
+    "subtotal": null,
+    "discount": null,
+    "service_charge": null,
+    "tax": null,
+    "total": 40.48,
+    "payment_method": "Card"
+  },
+  "accept": {
+    "currency": [
+      "$",
+      null
+    ]
+  },
+  "skip": {},
+  "notes": ""
+}

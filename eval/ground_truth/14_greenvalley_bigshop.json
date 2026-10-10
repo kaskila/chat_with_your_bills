@@ -1,0 +1,171 @@
+{
+  "image": "test/14_greenvalley_bigshop.jpg",
+  "set": "test",
+  "expected": {
+    "vendor": "GREEN VALLEY HYPERMARKET",
+    "vendor_tax_id": null,
+    "receipt_no": "771394",
+    "date": "2026-09-20",
+    "time": "16:14",
+    "currency": "ZMW",
+    "items": [
+      {
+        "description": "Rice 5kg",
+        "quantity": null,
+        "unit_price": null,
+        "amount": 176.0,
+        "category": "Grocery"
+      },
+      {
+        "description": "Mealie meal 10kg",
+        "quantity": 2,
+        "unit_price": null,
+        "amount": 296.0,
+        "category": "Grocery"
+      },
+      {
+        "description": "Sugar 2kg",
+        "quantity": null,
+        "unit_price": null,
+        "amount": 64.0,
+        "category": "Grocery"
+      },
+      {
+        "description": "Salt 1kg",
+        "quantity": 2,
+        "unit_price": null,
+        "amount": 19.0,
+        "category": "Grocery"
+      },
+      {
+        "description": "Tea bags 100s",
+        "quantity": null,
+        "unit_price": null,
+        "amount": 58.0,
+        "category": "Grocery"
+      },
+      {
+        "description": "Peanut butter 400g",
+        "quantity": null,
+        "unit_price": null,
+        "amount": 49.9,
+        "category": "Grocery"
+      },
+      {
+        "description": "Chicken pieces 1kg",
+        "quantity": 2,
+        "unit_price": null,
+        "amount": 184.0,
+        "category": "Grocery"
+      },
+      {
+        "description": "Tomato sauce",
+        "quantity": null,
+        "unit_price": null,
+        "amount": 31.0,
+        "category": "Grocery"
+      },
+      {
+        "description": "Bath soap 3pk",
+        "quantity": null,
+        "unit_price": null,
+        "amount": 44.0,
+        "category": "Other"
+      },
+      {
+        "description": "Toothpaste",
+        "quantity": 2,
+        "unit_price": null,
+        "amount": 72.0,
+        "category": "Other"
+      },
+      {
+        "description": "Washing powder 2kg",
+        "quantity": null,
+        "unit_price": null,
+        "amount": 118.0,
+        "category": "Other"
+      },
+      {
+        "description": "Cabbage",
+        "quantity": 2,
+        "unit_price": null,
+        "amount": 50.0,
+        "category": "Grocery"
+      },
+      {
+        "description": "Bananas 1kg",
+        "quantity": null,
+        "unit_price": null,
+        "amount": 30.0,
+        "category": "Grocery"
+      },
+      {
+        "description": "Yoghurt 500ml",
+        "quantity": 3,
+        "unit_price": null,
+        "amount": 84.0,
+        "category": "Grocery"
+      },
+      {
+        "description": "Dishwash liquid",
+        "quantity": null,
+        "unit_price": null,
+        "amount": 42.0,
+        "category": "Other"
+      }
+    ],
+    "subtotal": 1317.9,
+    "discount": null,
+    "service_charge": null,
+    "tax": 210.86,
+    "total": 1528.76,
+    "payment_method": "Card"
+  },
+  "accept": {
+    "items[0].unit_price": [
+      176.0
+    ],
+    "items[2].unit_price": [
+      64.0
+    ],
+    "items[4].category": [
+      "Drinks"
+    ],
+    "items[4].unit_price": [
+      58.0
+    ],
+    "items[5].unit_price": [
+      49.9
+    ],
+    "items[7].unit_price": [
+      31.0
+    ],
+    "items[8].category": [
+      "Grocery"
+    ],
+    "items[8].unit_price": [
+      44.0
+    ],
+    "items[9].category": [
+      "Grocery"
+    ],
+    "items[10].category": [
+      "Grocery"
+    ],
+    "items[10].unit_price": [
+      118.0
+    ],
+    "items[12].unit_price": [
+      30.0
+    ],
+    "items[14].category": [
+      "Grocery"
+    ],
+    "items[14].unit_price": [
+      42.0
+    ]
+  },
+  "skip": {},
+  "notes": "Amounts are printed half a line above their item names. Toiletries/cleaning: Other or Grocery."
+}

@@ -1,0 +1,48 @@
+{
+  "image": "test/09_eastpark_cinema.jpg",
+  "set": "dev",
+  "expected": {
+    "vendor": "EASTPARK CINEMAS",
+    "vendor_tax_id": null,
+    "receipt_no": "265144",
+    "date": "2026-09-27",
+    "time": "17:41",
+    "currency": "ZMW",
+    "items": [
+      {
+        "description": "Movie ticket (adult)",
+        "quantity": 2,
+        "unit_price": null,
+        "amount": 160.0,
+        "category": "Other"
+      },
+      {
+        "description": "Popcorn large",
+        "quantity": null,
+        "unit_price": null,
+        "amount": 65.0,
+        "category": "Food"
+      },
+      {
+        "description": "Soft drink",
+        "quantity": 2,
+        "unit_price": null,
+        "amount": 50.0,
+        "category": "Drinks"
+      }
+    ],
+    "subtotal": 237.07,
+    "discount": null,
+    "service_charge": null,
+    "tax": 37.93,
+    "total": 275.0,
+    "payment_method": "Card"
+  },
+  "accept": {
+    "items[1].unit_price": [
+      65.0
+    ]
+  },
+  "skip": {},
+  "notes": ""
+}
