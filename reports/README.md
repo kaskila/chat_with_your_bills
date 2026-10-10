@@ -13,7 +13,7 @@ One report per completed phase of the rebuild described in [docs/IMPLEMENTATION_
 | 6 | [Frontend (HTML/CSS/JS)](phase-6-frontend.md) | Done |
 | 7 | [Chat over the stored receipts](phase-7-chat.md) | Done |
 | + | [Camera capture (phone and webcam)](extra-camera-capture.md) | Done (added on request) |
-| + | [Using the app on the phone](extra-phone-app.md) (plan: [PHONE_PLAN](../docs/PHONE_PLAN.md), guide: [PHONE_SETUP](../docs/PHONE_SETUP.md)) | Steps 1–3 of 5 done |
+| + | [Using the app on the phone](extra-phone-app.md) (plan: [PHONE_PLAN](../docs/PHONE_PLAN.md), guide: [PHONE_SETUP](../docs/PHONE_SETUP.md)) | Steps 1–4 of 5 done |
 | 8 | Hardening and performance | Next |
 | 9 | Clean-up and documentation | Planned |
 

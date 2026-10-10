@@ -13,7 +13,7 @@ Use the app on the phone like a normal app, at home or on mobile data, while the
 | 1. One-click start | `scripts\install.ps1` (packages, Ollama and models, self-check, shortcuts; `-Autostart`, `-RemoveShortcuts`), `scripts\start.ps1` / `stop.ps1`, `python -m app.cli check`, `serve --log-file`, app icons | 29f4364 |
 | 2. Reach it from the phone | `scripts\phone-access.ps1` (Tailscale Serve), owner-only access for Tailscale requests, Funnel refused, address + QR code on the System page | 040edde, 927acf4 |
 | 3. Installable app | Web app manifest, icons (incl. maskable and Apple touch icon), service worker that keeps only the app's own files, "Install app" button, "cannot reach your computer" message | ffdb1da |
-| 4. Phone-first details | Shrink photos before upload (`frontend/js/resize.js`), upload progress line, bottom navigation on phones, larger touch targets, page widths fixed | (this commit) |
+| 4. Phone-first details | Shrink photos before upload (`frontend/js/resize.js`), upload progress line, bottom navigation on phones, larger touch targets, page widths fixed | 87394d0 |
 
 ## How it works
 
