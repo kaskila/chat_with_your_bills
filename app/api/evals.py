@@ -23,7 +23,7 @@ router = APIRouter(prefix="/api/eval", tags=["eval"])
 
 class EvalRequest(BaseModel):
     kind: Literal["ocr", "extraction", "chat"] = "extraction"
-    sets: list[Literal["tuning", "dev", "test"]] = ["test"]
+    sets: list[Literal["tuning", "dev", "test", "real"]] = ["test"]
     name: str | None = None
 
 

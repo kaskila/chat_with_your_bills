@@ -29,3 +29,5 @@ legacy/ocr_master.db
 .idea/
 Thumbs.db
 .DS_Store
+# Test cases made from real receipts in the app (names, tax IDs); their photos are in samples/real/.
+eval/ground_truth/real/

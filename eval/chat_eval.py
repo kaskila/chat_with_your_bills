@@ -23,6 +23,7 @@ CHECKED = ("date_from", "date_to", "category", "vendors", "item", "limit", "grou
 def build_db(truth: dict[str, dict]):
     """Ground-truth receipts in file order: ids 1-20 = 01-20, 21-23 = receipt_1..3."""
     conn = connect(":memory:")
+    truth = {k: v for k, v in truth.items() if v.get("set") != "real"}  # the questions refer to these ids
     for n, (image, gt) in enumerate(sorted(truth.items(), key=lambda kv: Path(kv[0]).name), start=1):
         fields = {k: v for k, v in gt["expected"].items() if k in ReceiptData.model_fields}
         receipt_id = repo.insert_receipt(conn, image_sha256=f"gt{n}", image_path=image, original_filename=image)

@@ -17,6 +17,7 @@ from app.ingest import image_file, register_image
 from app.pipeline.preprocess import crop_receipt, load_image
 from app.pipeline.validate import check
 from app.schemas import ReceiptData
+from app.test_cases import save_test_case, test_case_path
 from app.worker import Worker, enqueue
 
 router = APIRouter(prefix="/api/receipts", tags=["receipts"])
@@ -96,6 +97,7 @@ def get_receipt(conn: Conn, receipt_id: int) -> dict:
     jobs = conn.execute("SELECT id, stage, progress, error FROM jobs WHERE receipt_id = ? ORDER BY rowid DESC "
                         "LIMIT 1", (receipt_id,)).fetchone()
     record["latest_job"] = dict(jobs) if jobs else None
+    record["test_case"] = test_case_path(receipt_id).exists()
     return record
 
 
@@ -148,6 +150,17 @@ def reprocess(conn: Conn, worker: WorkerDep, receipt_id: int, force_vlm: bool = 
     worker.notify()
     return UploadResult(filename=record["original_filename"] or "", receipt_id=receipt_id, job_id=job_id,
                         status="processing")
+
+
+@router.post("/{receipt_id}/test-case")
+def make_test_case(conn: Conn, receipt_id: int) -> dict:
+    """Save this receipt, as currently stored, as an evaluation test case (set "real").
+    Only after the user has checked every field and item against the photo."""
+    record = _get_or_404(conn, receipt_id)
+    if record["status"] in ("processing", "failed"):
+        raise HTTPException(409, "Only a processed receipt can be a test case.")
+    path = save_test_case(record)
+    return {"saved": True, "file": path.name}
 
 
 @router.post("/reprocess-failed")

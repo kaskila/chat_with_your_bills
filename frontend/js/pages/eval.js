@@ -6,7 +6,7 @@ import { clear, errorBox, h, pct, seconds, toast } from "../ui.js";
 export async function render(view) {
   const kind = h("select", {}, h("option", { value: "extraction" }, "Full pipeline (extraction)"), h("option", { value: "ocr" }, "OCR only"),
     h("option", { value: "chat" }, "Chat questions"));
-  const sets = ["tuning", "dev", "test"].map((name) =>
+  const sets = ["tuning", "dev", "test", "real"].map((name) =>
     h("label", { class: "row small" }, h("input", { type: "checkbox", value: name, checked: name === "test" }), name));
   const statusBox = h("div");
   const results = h("div");

@@ -124,6 +124,23 @@ function dataPanel(r, reload) {
     }
   } }, "Save changes");
 
+  // After checking every field and item against the photo: keep it as a test case for the evaluation.
+  const testCase = h("button", { title: "Use this receipt, as corrected here, to measure accuracy (Evaluation, set 'real')",
+    onclick: async () => {
+      if (!confirm("Save as a test case?\n\nOnly do this after checking EVERY field and item against the photo: "
+        + "the evaluation will treat these values as the correct answer.")) return;
+      testCase.disabled = true;
+      try {
+        await api.patch(`/api/receipts/${r.id}`, collect());  // include unsaved corrections
+        await api.post(`/api/receipts/${r.id}/test-case`);
+        toast("Saved as a test case. It is scored in Evaluation → set 'real'.");
+        reload();
+      } catch (error) {
+        toast(error.message, "error");
+        testCase.disabled = false;
+      }
+    } }, r.test_case ? "Update test case" : "Save as test case");
+
   const reprocess = (forceVlm) => async () => {
     try {
       await api.post(`/api/receipts/${r.id}/reprocess${forceVlm ? "?force_vlm=true" : ""}`);
@@ -153,7 +170,8 @@ function dataPanel(r, reload) {
         h("thead", {}, h("tr", {}, h("th", {}, "Description"), h("th", {}, "Qty"), h("th", {}, "Unit price"), h("th", {}, "Amount"), h("th", {}, "Category"), h("th"))),
         itemsBody)),
       h("button", { class: "small", style: "margin-top: 0.5rem", onclick: () => addRow() }, "+ Add item")),
-    h("div", { class: "row" }, save, h("button", { onclick: reprocess(false) }, "Reprocess"),
+    h("div", { class: "row" }, save, testCase, r.test_case ? h("span", { class: "badge info" }, "✓ test case") : null,
+      h("button", { onclick: reprocess(false) }, "Reprocess"),
       h("button", { onclick: reprocess(true), title: "Re-read the photo with the vision model (about a minute more)" }, "Reprocess with VLM"),
       h("span", { class: "spacer" }), h("button", { class: "danger", onclick: remove }, "Delete")),
     r.notes?.length ? h("div", { class: "card" }, h("h3", {}, "Notes"), r.notes.map((n) => h("div", { class: "msg note" }, n))) : null,

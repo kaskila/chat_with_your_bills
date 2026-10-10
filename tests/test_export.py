@@ -54,3 +54,32 @@ def test_backup_and_restore(api, tmp_path, monkeypatch):
     assert info["receipts"] == 1 and info["photos_added"] == 1
     assert info["previous_database"] and json.loads(json.dumps(info))
     assert sqlite3.connect(str(target)).execute("SELECT vendor FROM receipts").fetchone()[0] == "Six Light Media Limited"
+
+
+def test_checked_receipt_becomes_a_test_case(api, tmp_path, monkeypatch):
+    from eval import chat_eval
+    from eval.run_eval import load_ground_truth
+
+    gt_dir, samples = tmp_path / "gt", tmp_path / "samples"
+    gt_dir.mkdir()
+    (gt_dir / "01_shop.json").write_text(json.dumps({"image": "test/01_shop.jpg", "set": "test",
+                                                     "expected": {"vendor": "Shop", "items": []}}))
+    monkeypatch.setenv("BILLS_GROUND_TRUTH_DIR", str(gt_dir))
+    monkeypatch.setenv("BILLS_SAMPLES_DIR", str(samples))
+    get_settings.cache_clear()
+    processed(api)
+    receipt_id = api.get("/api/receipts").json()[0]["id"]
+    assert api.get(f"/api/receipts/{receipt_id}").json()["test_case"] is False
+
+    assert api.post(f"/api/receipts/{receipt_id}/test-case").json() == {"saved": True, "file": f"real_{receipt_id}.json"}
+    case = json.loads((gt_dir / "real" / f"real_{receipt_id}.json").read_text(encoding="utf-8"))
+    assert case["set"] == "real" and case["expected"]["vendor"] == "Six Light Media Limited"
+    assert case["expected"]["items"] == [{"description": "Binding Spiral", "quantity": 2.0, "unit_price": 25.0,
+                                          "amount": 50.0, "category": "Office & Stationery"}]
+    assert (samples / case["image"]).read_bytes() == jpeg(1)
+    assert api.get(f"/api/receipts/{receipt_id}").json()["test_case"] is True
+
+    truth = load_ground_truth()
+    assert truth[case["image"]]["set"] == "real" and "test/01_shop.jpg" in truth
+    db = chat_eval.build_db(truth)  # chat questions refer to the synthetic receipts only
+    assert [r[0] for r in db.execute("SELECT vendor FROM receipts")] == ["Shop"]

@@ -36,7 +36,8 @@ def load_ground_truth(gt_dir: Path | None = None) -> dict[str, dict]:
     """Return {image filename: ground truth}, with the reference transcription under "text"."""
     gt_dir = gt_dir or get_settings().ground_truth_dir
     truth = {}
-    for path in sorted(gt_dir.glob("*.json")):
+    # Real receipts saved as test cases from the app live in real/ (not in git).
+    for path in [*sorted(gt_dir.glob("*.json")), *sorted(gt_dir.glob("real/*.json"))]:
         gt = json.loads(path.read_text(encoding="utf-8"))
         txt = path.with_suffix(".txt")
         gt["text"] = txt.read_text(encoding="utf-8") if txt.exists() else None
@@ -214,7 +215,7 @@ def main(argv: list[str] | None = None) -> int:
     chat.add_argument("--only", action="append", help="only these question ids (q01 ...); repeatable")
     for p in (ocr, ext):
         p.add_argument("--set", action="append", dest="sets",
-                       help="only these ground-truth sets (tuning, dev, test); repeatable")
+                       help="only these ground-truth sets (tuning, dev, test, real); repeatable")
 
     args = parser.parse_args(argv)
     truth = load_ground_truth()

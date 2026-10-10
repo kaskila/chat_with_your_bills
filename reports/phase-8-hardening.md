@@ -98,3 +98,24 @@ On the real data through the Tailscale address: receipts.csv 29 rows (4 KB), ite
 ### Files
 
 `app/export.py`, `app/api/export.py`, `app/cli.py` (`backup`, `restore`), `app/db/repo.py` (`find_duplicates`), `frontend/js/pages/system.js`, `frontend/css/styles.css`, `tests/test_export.py`, `tests/test_db.py`.
+
+## Part 5 — Test cases from real receipts (tool ready; waiting for receipts)
+
+### What was done
+
+- Receipt page: **Save as test case** (after a confirmation that every field and item was checked against the photo). It saves any corrections on the page, then writes `eval/ground_truth/real/real_<id>.json` (same format as the other test cases, set `real`) and copies the photo to `samples/real/`. A saved receipt shows "✓ test case" and the button becomes **Update test case**.
+- `POST /api/receipts/{id}/test-case`; `GET /api/receipts/{id}` reports `test_case`.
+- The evaluation loads `ground_truth/real/*.json` as the set **real** (command line `--set real`, and a "real" box on the Evaluation page). The chat evaluation leaves the real set out (its questions refer to the synthetic receipts by id).
+- `eval/ground_truth/real/` is ignored by git, like `samples/` (real receipts hold names and tax IDs).
+
+### Why
+
+Every accuracy number so far comes from 20 synthetic Zambian receipts and 3 older photos. Real phone photos (crumpled, shadows, handwriting) are what matters; the user's corrections in the app are the cheapest source of checked answers.
+
+### Results
+
+Test: a processed receipt saved as a test case has the stored values and items as expected values, its photo copied, appears in `load_ground_truth()` with set `real`, and is not in the chat test database. 153 automated tests passing. Next: the user saves 15–20 real receipts, then the full evaluation runs on the real set.
+
+### Files
+
+`app/test_cases.py`, `app/api/receipts.py`, `eval/run_eval.py`, `eval/chat_eval.py`, `app/api/evals.py`, `frontend/js/pages/receipt.js`, `frontend/js/pages/eval.js`, `.gitignore`, `tests/test_export.py`.
