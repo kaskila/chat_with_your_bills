@@ -60,7 +60,13 @@ if (-not (Test-Path $VenvPython)) {
 }
 Write-Host 'Installing packages (first time: a few minutes)...'
 & $VenvPython -m pip install --disable-pip-version-check -q -r (Join-Path $Root 'requirements.txt')
-if ($LASTEXITCODE -ne 0) { Show-Message 'Installing the Python packages failed; see the messages above.' -IsError; exit 1 }
+if ($LASTEXITCODE -ne 0) {
+    $hint = ''
+    # Some package files are ~130 characters deep inside .venv; Windows limits paths to 260 by default.
+    if ($Root.Length -gt 100) { $hint = "`n`nThe project folder path is long ($($Root.Length) characters). Move the folder somewhere shorter (for example C:\dev\chat_with_your_bills) or enable Windows long paths, then run this again." }
+    Show-Message "Installing the Python packages failed; see the messages above.$hint" -IsError
+    exit 1
+}
 
 # ---------------------------------------------------------------- 2. Ollama and models
 Step 'Ollama'

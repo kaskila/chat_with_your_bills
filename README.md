@@ -186,6 +186,7 @@ The same runs can be started from the **Evaluation** page. Reports go to `eval/r
 
 | Problem | What to do |
 | --- | --- |
+| Install fails with "No such file or directory" / "Long Path support" | The project folder path is too long for Windows (some package files are ~130 characters deep). Move it to a short path such as `C:\dev\chat_with_your_bills`, or [enable long paths](https://pip.pypa.io/warnings/enable-long-paths). |
 | Red banner "Ollama is not running" | Start the Ollama app (the worker also tries). Then **Receipts → Reprocess all failed**. |
 | "Model … is not installed" | `ollama pull qwen3:4b` (and `ollama pull glm-ocr`). |
 | "Timed out" or very slow | Plug in the charger; close heavy programs; a 15-item receipt with a re-read takes ~6 min. |
