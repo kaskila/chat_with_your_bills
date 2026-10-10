@@ -12,6 +12,7 @@ One report per completed phase of the rebuild described in [docs/IMPLEMENTATION_
 | 5 | [FastAPI backend and job worker](phase-5-backend.md) | Done (built before Phase 4) |
 | 6 | [Frontend (HTML/CSS/JS)](phase-6-frontend.md) | Done |
 | 7 | [Chat over the stored receipts](phase-7-chat.md) | Done |
+| + | [Camera capture (phone and webcam)](extra-camera-capture.md) | Done (added on request) |
 | 8 | Hardening and performance | Next |
 | 9 | Clean-up and documentation | Planned |
 

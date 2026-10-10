@@ -250,3 +250,15 @@ table.edit td:first-child { min-width: 13rem; }
 .chat-examples { display: flex; flex-wrap: wrap; gap: 0.5rem; }
 .chat-form { display: flex; gap: 0.5rem; position: sticky; bottom: 0.75rem; }
 .chat-form input { flex: 1; min-width: 0; }
+
+/* ---------- camera ---------- */
+.capture-buttons { margin-top: 0.75rem; }
+.camera { margin-top: 1rem; }
+.camera-stage { position: relative; background: #000; border-radius: 8px; overflow: hidden; display: flex; justify-content: center; }
+.camera-stage video { display: block; max-width: 100%; max-height: 65vh; }
+.camera-guide { position: absolute; top: 5%; bottom: 5%; left: 50%; aspect-ratio: 5 / 8; max-width: 90%; transform: translateX(-50%);
+  border: 2px dashed rgb(255 255 255 / 75%); border-radius: 6px; box-shadow: 0 0 0 100vmax rgb(0 0 0 / 25%); pointer-events: none; }
+.camera-shot { display: block; max-width: 100%; max-height: 65vh; margin: 0 auto; border-radius: 8px; }
+.phone-access { display: flex; gap: 1rem; align-items: flex-start; flex-wrap: wrap; }
+.phone-access .qr { background: #fff; border-radius: 8px; flex: none; }
+.phone-access code { overflow-wrap: anywhere; }

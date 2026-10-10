@@ -5,6 +5,25 @@ import { clear, errorBox, h, seconds, spinner, toast } from "../ui.js";
 
 const yes = (ok, good = "Yes", bad = "No") => h("span", { class: `badge ${ok ? "verified" : "failed"}` }, ok ? `✓ ${good}` : `✕ ${bad}`);
 
+function phoneCard(access) {
+  if (!access.lan) {
+    return h("div", { class: "card" }, h("h2", {}, "Phone access"),
+      h("p", {}, yes(false, "On", "Off"), " Only this computer can open the app."),
+      h("p", { class: "muted small" }, "To take receipt photos with your phone on the same Wi-Fi, stop the server and start it with ",
+        h("code", {}, "python -m app.cli serve --lan"), ". It prints a link with a random access key, also shown here as a QR code. ",
+        "Use it only on a network you trust (home, not public Wi-Fi)."));
+  }
+  const links = access.phone_links || [];
+  return h("div", { class: "card" }, h("h2", {}, "Phone access"),
+    h("div", { class: "phone-access" },
+      links.length ? h("img", { class: "qr", src: `/api/system/phone-qr.svg?t=${Date.now()}`, alt: "QR code of the phone link", width: 180, height: 180 }) : null,
+      h("div", {},
+        h("p", {}, yes(true, "On", "Off"), " Scan the code with your phone's camera (same Wi-Fi), or open:"),
+        links.length ? links.map((l) => h("div", {}, h("code", { class: "small" }, l))) : h("p", { class: "muted" }, "No network address found. Is Wi-Fi connected?"),
+        h("p", { class: "muted small" }, "The link contains an access key that changes every time the server starts. "
+          + "Anyone with it can see and add receipts while the server runs. On the phone, open Upload and tap Take photo."))));
+}
+
 export async function render(view) {
   const body = h("div", { class: "stack" }, spinner("Checking…"));
   let timer;
@@ -40,6 +59,7 @@ export async function render(view) {
             h("dt", {}, "Schema"), h("dd", {}, `version ${st.database.schema_version}`),
             h("dt", {}, "Receipts"), h("dd", {}, Object.entries(st.database.receipts).map(([k, v]) => `${v} ${k.replace("_", " ")}`).join(", ") || "none"),
             h("dt", {}, "Python"), h("dd", {}, st.versions.python)))),
+      phoneCard(st.access || {}),
       h("div", { class: "card" }, h("h2", {}, "Settings"),
         h("p", { class: "muted small" }, "Change these with BILLS_* environment variables or a .env file (see .env.example), then restart the server."),
         h("div", { class: "table-wrap" }, h("table", {}, h("tbody", {}, Object.entries(st.settings).map(([k, v]) =>

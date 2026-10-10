@@ -180,6 +180,34 @@ def cmd_export(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_serve(args: argparse.Namespace) -> int:
+    import os
+    import secrets
+
+    import uvicorn
+
+    from app.config import get_settings
+
+    os.environ["BILLS_PORT"] = str(args.port)
+    host = "127.0.0.1"
+    if args.lan:
+        # A new random key each start: the phone needs the printed link (or the System page).
+        os.environ["BILLS_LAN_KEY"] = secrets.token_urlsafe(9)
+        host = "0.0.0.0"
+    get_settings.cache_clear()
+
+    from app import access
+    print(f"\nOn this computer: http://127.0.0.1:{args.port}")
+    if args.lan:
+        links = access.phone_links()
+        print("On your phone (same Wi-Fi), open:" if links else "No network address found; is Wi-Fi on?")
+        for link in links:
+            print(f"  {link}")
+        print("Anyone with this link can see your receipts: use it only on a network you trust.\n")
+    uvicorn.run("app.main:app", host=host, port=args.port)
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="python -m app.cli")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -219,6 +247,12 @@ def main(argv: list[str] | None = None) -> int:
     export = sub.add_parser("export", help="export all stored receipts as JSON")
     export.add_argument("--out", type=Path)
     export.set_defaults(func=cmd_export)
+
+    serve = sub.add_parser("serve", help="start the web app (http://127.0.0.1:8000)")
+    serve.add_argument("--port", type=int, default=8000)
+    serve.add_argument("--lan", action="store_true",
+                       help="also allow phones on the same Wi-Fi, with a random access key")
+    serve.set_defaults(func=cmd_serve)
 
     args = parser.parse_args(argv)
     return args.func(args)

@@ -72,6 +72,10 @@ class Settings(BaseSettings):
     chat_history_turns: int = 3  # earlier questions sent along for follow-ups ("and in July?")
     chat_rephrase: bool = False  # second LLM call to reword the template answer (~10-20 s more)
 
+    # Server. lan_key is set by `python -m app.cli serve --lan`; without it only this computer may connect.
+    port: int = 8000
+    lan_key: str | None = None
+
     # Uploads
     max_upload_mb: int = 15
 

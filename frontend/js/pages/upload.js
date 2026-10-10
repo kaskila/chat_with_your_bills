@@ -1,6 +1,7 @@
 // Upload receipt photos and watch them being processed.
 
 import { api } from "../api.js";
+import { webcamPanel, webcamSupported } from "../camera.js";
 import { jobCard } from "../jobs.js";
 import { clear, h, statusBadge, toast } from "../ui.js";
 
@@ -8,9 +9,25 @@ export async function render(view) {
   const cards = [];
   const list = h("div", { class: "stack" });
   const input = h("input", { type: "file", accept: "image/jpeg,image/png,image/webp", multiple: true, hidden: true });
+  const touch = matchMedia("(pointer: coarse)").matches;
   const zone = h("div", { class: "dropzone", tabindex: "0", role: "button", "aria-label": "Choose receipt photos" },
-    h("div", { class: "big" }, "Drop receipt photos here, or click to choose"),
+    h("div", { class: "big" }, touch ? "Tap to choose photos" : "Drop receipt photos here, or click to choose"),
     h("div", { class: "muted small" }, "JPEG, PNG or WEBP, up to 15 MB each. Several at once is fine: they are processed one after another."));
+
+  // Phone/tablet: open the device camera app directly. Laptop: live webcam panel.
+  const cameraInput = h("input", { type: "file", accept: "image/*", capture: "environment", hidden: true });
+  const cameraSlot = h("div");
+  let webcam = null;
+  const closeWebcam = () => { webcam?.stop(); webcam = null; clear(cameraSlot); };
+  const openWebcam = () => {
+    closeWebcam();
+    webcam = webcamPanel({ onPhoto: (file) => { closeWebcam(); send([file]); }, onClose: closeWebcam });
+    clear(cameraSlot, webcam.el);
+  };
+  const sources = h("div", { class: "row capture-buttons" },
+    touch ? h("button", { class: "primary", type: "button", onclick: () => cameraInput.click() }, "Take photo") : null,
+    webcamSupported() ? h("button", { type: "button", onclick: openWebcam }, "Use webcam") : null);
+  cameraInput.addEventListener("change", () => { send([...cameraInput.files]); cameraInput.value = ""; });
 
   async function send(files) {
     if (!files.length) return;
@@ -46,7 +63,8 @@ export async function render(view) {
   clear(view,
     h("div", { class: "page-head" }, h("div", {}, h("h1", {}, "Upload receipts"),
       h("div", { class: "muted" }, "Each photo is read (OCR), turned into data by the local model, and checked. Receipts that fail the checks are re-read by the vision model."))),
-    zone, input, h("div", { style: "margin-top: 1rem" }, list));
+    zone, input, cameraInput, sources.childElementCount ? sources : null, cameraSlot,
+    h("div", { style: "margin-top: 1rem" }, list));
 
   // Jobs still running from earlier (e.g. after navigating away).
   try {
@@ -58,5 +76,5 @@ export async function render(view) {
     }
   } catch { /* the banner reports server problems */ }
 
-  return () => cards.forEach((c) => c.stop());
+  return () => { cards.forEach((c) => c.stop()); closeWebcam(); };
 }

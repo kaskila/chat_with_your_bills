@@ -1,5 +1,6 @@
 """Health, configuration and model warm-up."""
 
+import io
 import platform
 import sqlite3
 import threading
@@ -7,8 +8,11 @@ from typing import Annotated
 
 import httpx
 import ollama
-from fastapi import APIRouter, Depends, Request
+import segno
+from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi.responses import Response
 
+from app import access
 from app.api.deps import get_conn
 from app.config import get_settings
 from app.db import repo
@@ -66,6 +70,9 @@ def health(request: Request, conn: Conn) -> dict:
                      "receipts": counts},
         "warmup": request.app.state.warmup,
         "versions": {"python": platform.python_version()},
+        # The links contain the access key: only shown on this computer.
+        "access": {"lan": bool(s.lan_key),
+                   "phone_links": access.phone_links() if access.is_local(request) else []},
         "settings": {k: getattr(s, k) for k in _PUBLIC_SETTINGS},
     }
 
@@ -92,6 +99,17 @@ def start_warmup(app) -> None:
 def warmup(request: Request) -> dict:
     start_warmup(request.app)
     return request.app.state.warmup
+
+
+@router.get("/phone-qr.svg")
+def phone_qr(request: Request) -> Response:
+    """QR code of the phone link (contains the access key, so only served to this computer)."""
+    links = access.phone_links()
+    if not access.is_local(request) or not links:
+        raise HTTPException(404, "Phone access is off. Start the app with: python -m app.cli serve --lan")
+    buffer = io.BytesIO()  # a standalone SVG (with xmlns), so it renders in <img>
+    segno.make(links[0], error="m").save(buffer, kind="svg", scale=5, border=2, dark="#000", light="#fff")
+    return Response(buffer.getvalue(), media_type="image/svg+xml", headers={"Cache-Control": "no-store"})
 
 
 @router.get("/jobs/recent")

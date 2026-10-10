@@ -1,11 +1,13 @@
 # Chat With Your Bills
 
-> **Rebuild in progress.** The project is being rebuilt following [docs/IMPLEMENTATION_PLAN.md](docs/IMPLEMENTATION_PLAN.md). Phases 0–6 are done: photo → RapidOCR → qwen3:4b → checks → (VLM re-read when needed) → SQLite, with a FastAPI backend and a browser app. Phase reports are in [reports/](reports/README.md). The original prototype described below now lives in `legacy/` (example images in `samples/`), and the evaluation tools are in `eval/`.
+> **Rebuild in progress.** The project is being rebuilt following [docs/IMPLEMENTATION_PLAN.md](docs/IMPLEMENTATION_PLAN.md). Phases 0–7 are done: photo → RapidOCR → qwen3:4b → checks → (VLM re-read when needed) → SQLite, with a FastAPI backend, a browser app (with phone and webcam capture) and chat over the receipts. Phase reports are in [reports/](reports/README.md). The original prototype described below now lives in `legacy/` (example images in `samples/`), and the evaluation tools are in `eval/`.
 >
 > **Run the server** (Ollama must be running; on a laptop, keep the charger plugged in), then open http://127.0.0.1:8000 for the app (http://127.0.0.1:8000/docs for the API):
 > ```powershell
-> .\.venv\Scripts\python.exe -m uvicorn app.main:app --host 127.0.0.1 --port 8000
+> .\.venv\Scripts\python.exe -m app.cli serve          # only this computer
+> .\.venv\Scripts\python.exe -m app.cli serve --lan    # also phones on the same Wi-Fi (prints a link + access key; QR code on the System page)
 > ```
+> With `--lan`, Windows may ask once whether Python may accept connections on private networks: allow it. Use `--lan` only on a network you trust.
 >
 > Setup and command-line tools:
 >
@@ -260,5 +262,6 @@ Natural places to extend the project are runtime validation after extraction, an
 ## Documentation verification
 
 This guide was prepared by inspecting all ten Python source files and the directory layout. The database schema above comes from `table_creation.py`; existing database contents were not audited. OCR, model inference, installation commands, and the full pipeline were not executed as part of this documentation work.
-#   c h a t _ w i t h _ y o u r _ b i l l s  
+#   c h a t _ w i t h _ y o u r _ b i l l s 
+ 
  
