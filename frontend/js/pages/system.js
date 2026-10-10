@@ -6,22 +6,31 @@ import { clear, errorBox, h, seconds, spinner, toast } from "../ui.js";
 const yes = (ok, good = "Yes", bad = "No") => h("span", { class: `badge ${ok ? "verified" : "failed"}` }, ok ? `✓ ${good}` : `✕ ${bad}`);
 
 function phoneCard(access) {
-  if (!access.lan) {
-    return h("div", { class: "card" }, h("h2", {}, "Phone access"),
-      h("p", {}, yes(false, "On", "Off"), " Only this computer can open the app."),
-      h("p", { class: "muted small" }, "To take receipt photos with your phone on the same Wi-Fi, stop the server and start it with ",
-        h("code", {}, "python -m app.cli serve --lan"), ". It prints a link with a random access key, also shown here as a QR code. ",
-        "Use it only on a network you trust (home, not public Wi-Fi)."));
-  }
+  const ts = access.tailscale || {};
   const links = access.phone_links || [];
+  const steps = [];
+  if (!ts.installed) {
+    steps.push(h("li", {}, "Anywhere (home or mobile data): install ", h("a", { href: "https://tailscale.com/download", target: "_blank", rel: "noopener" }, "Tailscale"),
+      " on this computer and your phone, sign in to both with the same account, then run ", h("code", {}, "scripts\\phone-access.ps1"), "."));
+  } else if (!ts.online) {
+    steps.push(h("li", {}, "Tailscale is installed but not signed in on this computer: click its tray icon and choose Log in."));
+  } else if (!ts.serving) {
+    steps.push(h("li", {}, "Tailscale is ready. Turn on phone access once with ", h("code", {}, "powershell -ExecutionPolicy Bypass -File scripts\\phone-access.ps1"), "."));
+  }
+  if (!access.lan) {
+    steps.push(h("li", {}, "Only at home, without Tailscale: start with the Start-menu shortcut ", h("b", {}, "Chat With Your Bills (phone access)"),
+      " (a link with an access key; use it only on a network you trust)."));
+  }
+  const on = links.length > 0;
   return h("div", { class: "card" }, h("h2", {}, "Phone access"),
     h("div", { class: "phone-access" },
-      links.length ? h("img", { class: "qr", src: `/api/system/phone-qr.svg?t=${Date.now()}`, alt: "QR code of the phone link", width: 180, height: 180 }) : null,
+      on ? h("img", { class: "qr", src: `/api/system/phone-qr.svg?t=${Math.floor(Date.now() / 60000)}`, alt: "QR code of the phone address", width: 180, height: 180 }) : null,
       h("div", {},
-        h("p", {}, yes(true, "On", "Off"), " Scan the code with your phone's camera (same Wi-Fi), or open:"),
-        links.length ? links.map((l) => h("div", {}, h("code", { class: "small" }, l))) : h("p", { class: "muted" }, "No network address found. Is Wi-Fi connected?"),
-        h("p", { class: "muted small" }, "The link contains an access key that changes every time the server starts. "
-          + "Anyone with it can see and add receipts while the server runs. On the phone, open Upload and tap Take photo."))));
+        h("p", {}, yes(on, "On", "Off"), " ", on ? "Scan the code with your phone's camera, or open:" : "Only this computer can open the app."),
+        links.map((l) => h("div", {}, h("code", { class: "small" }, l),
+          h("span", { class: "muted small" }, l.startsWith("https://") ? "  (Tailscale: anywhere, your devices only)" : "  (same Wi-Fi only; key changes on restart)"))),
+        steps.length ? h("ul", { class: "small" }, steps) : null,
+        on ? h("p", { class: "muted small" }, "The app must be running on this computer. On the phone, open Upload and tap Take photo.") : null)));
 }
 
 export async function render(view) {

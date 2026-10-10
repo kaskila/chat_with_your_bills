@@ -72,7 +72,8 @@ def health(request: Request, conn: Conn) -> dict:
         "versions": {"python": platform.python_version()},
         # The links contain the access key: only shown on this computer.
         "access": {"lan": bool(s.lan_key),
-                   "phone_links": access.phone_links() if access.is_local(request) else []},
+                   "phone_links": access.phone_links() if access.is_local(request) else [],
+                   "tailscale": access.tailscale_info()},
         "settings": {k: getattr(s, k) for k in _PUBLIC_SETTINGS},
     }
 
@@ -106,7 +107,7 @@ def phone_qr(request: Request) -> Response:
     """QR code of the phone link (contains the access key, so only served to this computer)."""
     links = access.phone_links()
     if not access.is_local(request) or not links:
-        raise HTTPException(404, "Phone access is off. Start the app with: python -m app.cli serve --lan")
+        raise HTTPException(404, "Phone access is off: run scripts\\phone-access.ps1 (Tailscale) or start with --lan.")
     buffer = io.BytesIO()  # a standalone SVG (with xmlns), so it renders in <img>
     segno.make(links[0], error="m").save(buffer, kind="svg", scale=5, border=2, dark="#000", light="#fff")
     return Response(buffer.getvalue(), media_type="image/svg+xml", headers={"Cache-Control": "no-store"})

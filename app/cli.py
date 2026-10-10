@@ -272,7 +272,8 @@ def cmd_serve(args: argparse.Namespace) -> int:
         for link in links:
             print(f"  {link}")
         print("Anyone with this link can see your receipts: use it only on a network you trust.\n")
-    uvicorn.run("app.main:app", host=host, port=args.port)
+    # proxy_headers off: a forwarded address (X-Forwarded-For) must never make a request look local.
+    uvicorn.run("app.main:app", host=host, port=args.port, proxy_headers=False)
     return 0
 
 
