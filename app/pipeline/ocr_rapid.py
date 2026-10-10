@@ -190,13 +190,20 @@ def run_ocr(image: np.ndarray, *, version: str | None = None, model_type: str | 
     boxes, rotation = _boxes(ocr(image)), 0.0
 
     if fix_rotation and _is_sideways(boxes):
-        # Photo taken sideways: try both quarter turns, keep the better reading.
-        candidates = [(boxes, 0.0)]
-        for turn, deg in ((cv2.ROTATE_90_CLOCKWISE, -90.0), (cv2.ROTATE_90_COUNTERCLOCKWISE, 90.0)):
-            candidates.append((_boxes(ocr(cv2.rotate(image, turn))), deg))
-        boxes, rotation = max(candidates, key=lambda c: _quality(c[0]))
-        if rotation:
-            image = cv2.rotate(image, cv2.ROTATE_90_CLOCKWISE if rotation < 0 else cv2.ROTATE_90_COUNTERCLOCKWISE)
+        # Photo taken sideways: choose the quarter turn that makes the page upright. RapidOCR's line
+        # classifier turns upside-down lines round one by one, so the wrong turn (page upside down)
+        # reads almost as well, only with the lines in reverse order (a payment message's balance
+        # came before its amount). With the classifier off, only the upright turn reads well
+        # (150 vs 46 on that photo), so the turns are compared that way.
+        turns = ((cv2.ROTATE_90_CLOCKWISE, -90.0), (cv2.ROTATE_90_COUNTERCLOCKWISE, 90.0))
+        upright = max(turns, key=lambda t: _quality(_boxes(ocr(cv2.rotate(image, t[0]), use_cls=False))))
+        turned = cv2.rotate(image, upright[0])
+        turned_boxes = _boxes(ocr(turned))
+        # RapidOCR also reads tall boxes without turning the page, about as well, but sideways lines
+        # cannot be put in order (they were joined into one line, bottom line first). So the turned
+        # page is used unless it reads far worse.
+        if _quality(turned_boxes) >= 0.5 * _quality(boxes):
+            boxes, rotation, image = turned_boxes, upright[1], turned
 
     if fix_rotation and boxes:
         tilt = float(np.median([b.angle for b in boxes if len(b.text) >= 3] or [0.0]))

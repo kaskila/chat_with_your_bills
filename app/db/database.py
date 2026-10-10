@@ -81,6 +81,12 @@ MIGRATIONS: list[str] = [
     """
     ALTER TABLE receipts ADD COLUMN recipient TEXT;
     """,
+    # 3: more mobile money details: transfers to individuals, balance after the transaction
+    """
+    ALTER TABLE receipts ADD COLUMN recipient_phone TEXT;
+    ALTER TABLE receipts ADD COLUMN transaction_type TEXT;
+    ALTER TABLE receipts ADD COLUMN balance REAL;
+    """,
 ]
 
 

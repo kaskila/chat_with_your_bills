@@ -89,6 +89,8 @@ export function statusBadge(status) {
 
 export const WARNING_LABEL = {
   VALUE_NOT_IN_TEXT: "Value not printed",
+  PAYMENT_FAILED: "Transaction failed",
+  AMOUNT_UNCLEAR: "Amount unclear",
   ITEMS_SUM_MISMATCH: "Items don't add up",
   TOTAL_MISMATCH: "Totals inconsistent",
   PAYMENT_MISMATCH: "Payment doesn't match",

@@ -7,9 +7,14 @@ import { clear, errorBox, h, money, seconds, statusBadge, toast, warningList } f
 const CATEGORIES = ["Food", "Drinks", "Grocery", "Utilities", "Travel", "Logistics", "Office & Stationery", "Other"];
 const FIELDS = [
   ["vendor", "Vendor", "text"], ["receipt_no", "Receipt no.", "text"], ["date", "Date", "date"],
-  ["time", "Time", "time"], ["currency", "Currency", "text"], ["payment_method", "Payment", "text"], ["recipient", "Paid to", "text"],
+  ["time", "Time", "time"], ["currency", "Currency", "text"], ["payment_method", "Payment", "text"],
   ["subtotal", "Subtotal", "number"], ["discount", "Discount", "number"], ["service_charge", "Service charge", "number"],
   ["tax", "Tax", "number"], ["total", "Total", "number"], ["amount_paid", "Amount paid", "number"], ["change", "Change", "number"],
+];
+// Mobile money: shown when a receipt has any of them (or always, to fill in by hand, under "More fields").
+const MOBILE_FIELDS = [
+  ["transaction_type", "Transaction type", "text"], ["recipient", "Paid to", "text"],
+  ["recipient_phone", "Recipient phone", "text"], ["balance", "Balance after", "number"],
 ];
 const TIMING_COLORS = { preprocess_s: "#9ec5f4", ocr_s: "#5598e7", extract_s: "#2a78d6", vlm_s: "#eb6834", extract2_s: "#d95926" };
 const TIMING_LABELS = { preprocess_s: "Prepare", ocr_s: "OCR", extract_s: "Extract", vlm_s: "VLM re-read", extract2_s: "Re-extract" };
@@ -76,7 +81,9 @@ function flaggedFields(warnings) {
 function dataPanel(r, reload) {
   const flagged = flaggedFields(r.warnings);
   const inputs = {};
-  const fields = h("div", { class: "fields" }, FIELDS.map(([key, label, type]) => {
+  const mobile = MOBILE_FIELDS.some(([key]) => r[key] !== null && r[key] !== undefined);
+  const shown = mobile ? [...FIELDS, ...MOBILE_FIELDS] : FIELDS;
+  const fields = h("div", { class: "fields" }, shown.map(([key, label, type]) => {
     const input = h("input", { type, value: r[key] ?? "", step: type === "number" ? "0.01" : undefined, name: key });
     inputs[key] = input;
     return h("label", { class: `field ${flagged.has(key) ? "flagged" : ""}` }, label, input);
@@ -100,7 +107,8 @@ function dataPanel(r, reload) {
   const num = (v) => (v === "" || v === null ? null : Number(v));
   function collect() {
     const data = {};
-    for (const [key, , type] of FIELDS) {
+    for (const [key] of MOBILE_FIELDS) data[key] = r[key] ?? null;  // kept when not shown
+    for (const [key, , type] of shown) {
       const v = inputs[key].value.trim();
       data[key] = type === "number" ? num(v) : v || null;
     }

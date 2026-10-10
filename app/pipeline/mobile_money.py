@@ -1,17 +1,20 @@
 """Mobile money messages (Airtel Money, MTN MoMo, Zamtel Kwacha): rules applied in Python.
 
-A screenshot of a payment confirmation is not a shop receipt:
+A screenshot of a payment or transfer confirmation is not a shop receipt:
 
-- The vendor is the mobile money provider (Airtel), not the account paid (the recipient,
-  stored separately).
-- The amount is the payment ("of ZMW 10.00"), never the balance ("balance is ZMW 539.40").
+- The vendor is the mobile money provider (Airtel). Who was paid is stored separately:
+  recipient (name or account), recipient phone, and the transaction type
+  ("Mobile money payment" to a merchant account, "Money transfer to individual").
+- The amount is the payment ("of ZMW 10.00", "Amount K50"), never the balance; the balance
+  after the transaction is kept in its own field.
 - Airtel transaction IDs carry the date and time: MP261010.1142.C40203 = 2026-10-10 11:42.
   The date is only taken from an ID in exactly that pattern and only if it is a real date,
   not in the future; otherwise nothing is guessed and the missing date stays flagged.
+  The same pattern identifies Airtel when the message does not name it.
 - A message reporting a failed transaction is flagged.
 
-Only short messages that name a provider, contain a transaction ID and read like a
-confirmation are treated this way, so a shop receipt "paid by Airtel Money" is unaffected.
+Only short messages with a transaction ID that read like a confirmation are treated this way,
+so a shop receipt "paid by Airtel Money" is unaffected.
 """
 
 import re
@@ -28,17 +31,30 @@ PROVIDERS = (
     ("MTN", re.compile(r"\b(mtn\s*mobile\s*money|mtn\s*momo|momo)\b", re.I), "MTN MoMo"),
     ("Zamtel", re.compile(r"\bzamtel\s*kwacha\b", re.I), "Zamtel Kwacha"),
 )
-_TXN_ID = re.compile(r"\b(?:txn|trans(?:action)?)\.?\s*(?:id|ref(?:erence)?)\b\.?\s*[:.]?\s*([A-Z0-9][A-Z0-9.]{5,40}?)\.?(?=\s|$)",
-                     re.I | re.M)
+AIRTEL = ("Airtel", "Airtel Money")
+
+# "Txn. ID : MP261010.1055.H32285.Your ..." -> MP261010.1055.H32285 (a dot-segment that runs into
+# a lower-case word, ".Your", is the next sentence, not part of the ID).
+_ID = r"([A-Z0-9]+(?:\.[A-Z0-9]+(?![a-z]))*)"
+_TXN_ID = re.compile(r"(?i:\b(?:txn|trans(?:action)?)\.?\s*(?:id|ref(?:erence)?)\b)\.?\s*[:.]?\s*" + _ID)
 # Airtel Money: two letters, YYMMDD, ".", HHMM, ".", reference.
 _AIRTEL_ID = re.compile(r"^[A-Z]{2}(\d{2})(\d{2})(\d{2})\.(\d{2})(\d{2})\.[A-Z0-9]+$")
+_AIRTEL_ID_IN_TEXT = re.compile(r"\b[A-Z]{2}\d{6}\.\d{4}\.[A-Z0-9]{3,12}(?![a-z])")
+
 _CONFIRMATION = re.compile(r"\b(is successful|successful(ly)?|balance is|new balance|you have (sent|paid|received))\b", re.I)
 _FAILED = re.compile(r"\b(failed|unsuccessful|not successful|declined|insufficient (funds|balance)|could not be completed)\b", re.I)
 _MONEY = r"(?:ZMW|ZK|K)\s*([\d,]+(?:\.\d{1,2})?)"
-_PAYMENT = re.compile(rf"\bpayment (?:of {_MONEY} )?to (.+?) (?:of|for) {_MONEY}", re.I | re.S)
-_SENT = re.compile(rf"\b(?:you have )?(?:sent|paid|transferred) {_MONEY} to (.+?)(?:[.,]| on | at |\s+txn|\s*$)", re.I | re.S)
+_PHONE = r"(\+?260\s?\d{9}|0\d{9})"
+# "Payment to AMMOBILE Account NA of ZMW 10.00 is successful"
+_PAYMENT = re.compile(rf"\bpayment (?:of {_MONEY} )?to (.+?) (?:of|for) {_MONEY}", re.I)
+# "You have sent Money to Isaac Kasikila on 0968223362.Amount K50."
+_SENT_MONEY_TO = re.compile(rf"\bsent money to (.+?) on {_PHONE}\s*\.?\s*amount\s*{_MONEY}", re.I)
+# "You have sent K50 to Isaac Kasikila 0968223362."
+_SENT = re.compile(rf"\b(?:you have )?(?:sent|paid|transferred) {_MONEY} to (.+?)(?:[.,](?!\d)| on | at |\s+txn|$)", re.I)
 _BALANCE = re.compile(rf"\bbalance(?: is|:)?\s*{_MONEY}", re.I)
 MAX_MESSAGE_LINES = 15
+
+PAYMENT, TRANSFER = "Mobile money payment", "Money transfer to individual"
 
 
 @dataclass
@@ -53,23 +69,35 @@ def _amount(text: str) -> float:
     return round(float(text.replace(",", "")), 2)
 
 
+def txn_id(text: str) -> str | None:
+    """The transaction ID after its label, or an Airtel-pattern ID anywhere in the text."""
+    if m := _TXN_ID.search(text):
+        return m.group(1).rstrip(".")
+    if m := _AIRTEL_ID_IN_TEXT.search(text):
+        return m.group(0)
+    return None
+
+
 def detect(ocr_text: str | None) -> tuple[str, str] | None:
     """(provider, payment method) if the text is a mobile money confirmation message."""
     if not ocr_text:
         return None
     lines = [line for line in ocr_text.splitlines() if line.strip()]
-    if len(lines) > MAX_MESSAGE_LINES or not _TXN_ID.search(ocr_text) or not _CONFIRMATION.search(ocr_text):
+    found_id = txn_id(ocr_text)
+    if len(lines) > MAX_MESSAGE_LINES or not found_id or not _CONFIRMATION.search(ocr_text):
         return None
     for provider, pattern, method in PROVIDERS:
         if pattern.search(ocr_text):
             return provider, method
+    if _AIRTEL_ID.match(found_id):  # Airtel's own ID pattern identifies the provider
+        return AIRTEL
     return None
 
 
-def date_from_txn_id(txn_id: str, today: date) -> tuple[str, str] | None:
+def date_from_txn_id(txn: str, today: date) -> tuple[str, str] | None:
     """('2026-10-10', '11:42') from MP261010.1142.C40203; None unless the ID has exactly that
     pattern and gives a real date and time that is not in the future."""
-    m = _AIRTEL_ID.match(txn_id)
+    m = _AIRTEL_ID.match(txn)
     if not m:
         return None
     yy, mm, dd, hh, mi = (int(g) for g in m.groups())
@@ -80,6 +108,13 @@ def date_from_txn_id(txn_id: str, today: date) -> tuple[str, str] | None:
     if when.date() > today + timedelta(days=1) or when.year < 2010:
         return None
     return when.date().isoformat(), f"{hh:02d}:{mi:02d}"
+
+
+def _split_phone(name: str) -> tuple[str, str | None]:
+    """'Isaac Kasikila 0968223362' -> ('Isaac Kasikila', '0968223362')."""
+    if m := re.search(_PHONE, name):
+        return clean_text(name[:m.start()] + name[m.end():]).strip(" ,-") or None, m.group(1).replace(" ", "")
+    return clean_text(name), None
 
 
 def apply(receipt: ReceiptData, ocr_text: str | None, *, today: date | None = None) -> MobileMoney | None:
@@ -97,28 +132,34 @@ def apply(receipt: ReceiptData, ocr_text: str | None, *, today: date | None = No
                             + (f" (was '{receipt.vendor}')." if receipt.vendor else "."))
         receipt.vendor = provider
     receipt.payment_method = method
-    receipt.currency = receipt.currency or "ZMW"
+    receipt.currency = "ZMW" if receipt.currency in (None, "K", "ZK") else receipt.currency
 
-    txn_id = _TXN_ID.search(ocr_text).group(1).rstrip(".").upper()
-    receipt.receipt_no = txn_id
-    when = date_from_txn_id(txn_id, today)
+    txn = txn_id(ocr_text).upper()
+    receipt.receipt_no = txn
+    when = date_from_txn_id(txn, today)
     if when:
         if (receipt.date, receipt.time) != when:
-            result.notes.append(f"Date and time {when[0]} {when[1]} taken from the transaction ID {txn_id}.")
+            result.notes.append(f"Date and time {when[0]} {when[1]} taken from the transaction ID {txn}.")
         receipt.date, receipt.time = when
     else:
-        result.notes.append(f"Transaction ID {txn_id} is not in the known Airtel date format; the date was not "
+        result.notes.append(f"Transaction ID {txn} is not in the known Airtel date format; the date was not "
                             "taken from it.")
 
-    # The payment, its recipient, and never the balance.
-    paid, recipient = None, None
+    # Who was paid, how much, and never the balance.
+    paid, recipient, phone, kind = None, None, None, None
     if m := _PAYMENT.search(text):
-        recipient, paid = m.group(2), _amount(m.group(3))
+        recipient, paid, kind = m.group(2), _amount(m.group(3)), PAYMENT
+    elif m := _SENT_MONEY_TO.search(text):
+        recipient, phone, paid, kind = m.group(1), m.group(2), _amount(m.group(3)), TRANSFER
     elif m := _SENT.search(text):
-        paid, recipient = _amount(m.group(1)), m.group(2)
+        paid, recipient, kind = _amount(m.group(1)), m.group(2), TRANSFER
     if recipient:
-        receipt.recipient = clean_text(recipient)
+        name, phone_in_name = _split_phone(recipient)
+        receipt.recipient = name
+        receipt.recipient_phone = phone or phone_in_name
+    receipt.transaction_type = kind
     balance = _amount(m.group(1)) if (m := _BALANCE.search(text)) else None
+    receipt.balance = balance
     if paid is not None and (receipt.total is None or not close(receipt.total, paid)):
         old = receipt.total
         receipt.total = paid
@@ -133,9 +174,16 @@ def apply(receipt: ReceiptData, ocr_text: str | None, *, today: date | None = No
     # kept when it gave one item; otherwise "Other" (it can be changed on the receipt page).
     if receipt.total is not None:
         category = receipt.items[0].category if len(receipt.items) == 1 else "Other"
-        receipt.items = [LineItem(description=f"Payment to {receipt.recipient}" if receipt.recipient else
-                                  f"{method} payment", amount=receipt.total, category=category)]
+        who = receipt.recipient or receipt.recipient_phone
+        description = (f"Money sent to {who}" if kind == TRANSFER else f"Payment to {who}") if who else f"{method} payment"
+        receipt.items = [LineItem(description=description, amount=receipt.total, category=category)]
 
+    if paid is None:
+        amounts = {_amount(a) for a in re.findall(_MONEY, text)}
+        if len(amounts) > 1:  # e.g. payment and balance, but the wording was not recognised
+            result.warnings.append(ReceiptWarning(
+                "AMOUNT_UNCLEAR", f"The message has several amounts ({', '.join(f'{a:.2f}' for a in sorted(amounts))}) "
+                "and it is not clear which one was paid; the balance must not be counted as spending.", "total"))
     if _FAILED.search(text):
         result.warnings.append(ReceiptWarning(
             "PAYMENT_FAILED", "The message says the transaction was not successful: it may not be real spending.",

@@ -8,7 +8,7 @@ Everything runs on your own computer, on the CPU (no GPU, no cloud services): OC
 
 - **Reads receipt photos** (phone photos, crumpled thermal paper, screenshots): finds and straightens the receipt, reads the text, and extracts shop, tax ID, receipt number, date, time, currency, items (with category), subtotal, discount, service charge, tax, total and payment.
 - **Checks every number:** items must add up, totals must be consistent, every amount must actually be printed on the receipt. Problems are flagged ("needs review") instead of silently stored; when the first reading fails the checks, the vision model reads the photo again and the more consistent reading is kept.
-- **Understands mobile money messages** (Airtel Money, MTN MoMo, Zamtel Kwacha screenshots): the provider is the vendor, the account paid is stored as "Paid to", the amount is the payment (never the balance), and for Airtel the date and time are read from the transaction ID (MP261010.1142… = 10 Oct 2026, 11:42).
+- **Understands mobile money messages** (Airtel Money, MTN MoMo, Zamtel Kwacha screenshots): the provider is the vendor, payments to merchant accounts and transfers to people are recorded with who was paid (name and phone), the transaction type and the balance after; the amount is the payment (never the balance), and for Airtel the date and time are read from the transaction ID (MP261010.1142… = 10 Oct 2026, 11:42).
 - **Lets you review and correct** each receipt next to its photo, with warnings shown on the affected fields.
 - **Dashboard:** spending by category, shop and month, per currency.
 - **Chat:** questions about your spending, answered from the database (the model only chooses a query; the numbers come straight from SQL).

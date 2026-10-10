@@ -46,4 +46,8 @@ class ReceiptData(BaseModel):
     amount_paid: float | None = None
     change: float | None = None
     payment_method: str | None = None
-    recipient: str | None = None  # who was paid, for mobile money payments (the vendor is the provider)
+    # Mobile money messages (the vendor is the provider, e.g. Airtel):
+    recipient: str | None = None  # who was paid: a merchant account or a person
+    recipient_phone: str | None = None
+    transaction_type: str | None = None  # "Mobile money payment" | "Money transfer to individual"
+    balance: float | None = None  # balance after the transaction, as printed

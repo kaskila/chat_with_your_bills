@@ -32,6 +32,34 @@ def test_airtel_payment_follows_the_rules():
     assert [(i.description, i.amount) for i in r.items] == [("Payment to AMMOBILE Account NA", 10.0)]
     assert result.status == "verified", result.warnings          # dark-mode screenshot is not a photo problem
     assert any("transaction ID" in n for n in result.notes)
+    assert r.transaction_type == "Mobile money payment" and r.balance == 539.40 and r.recipient_phone is None
+
+
+# Transfer to a person: no provider name in the text, the ID runs straight into the next sentence.
+TRANSFER_MSG = ("You have sent Money to Isaac\nKasikila on 0968223362.Amount\nK50. Txn. ID :\n"
+                "MP261010.1055.H32285.Your\navailable balance is K549.40")
+
+
+def test_transfer_to_an_individual():
+    result = validate(model_reading(vendor="Isaac Kasikila", currency="K", total=50.0, receipt_no="0968223362"),
+                      ocr_text=TRANSFER_MSG, ocr_confidence=0.98, image_warnings=["TOO_DARK"], today=TODAY)
+    r = result.receipt
+    assert r.vendor == "Airtel" and r.payment_method == "Airtel Money"   # known from the ID pattern
+    assert r.receipt_no == "MP261010.1055.H32285"                       # not ".Your", not the phone number
+    assert (r.date, r.time) == ("2026-10-10", "10:55")
+    assert (r.recipient, r.recipient_phone) == ("Isaac Kasikila", "0968223362")
+    assert r.transaction_type == "Money transfer to individual"
+    assert r.total == 50.0 and r.currency == "ZMW" and r.balance == 549.40
+    assert [(i.description, i.amount) for i in r.items] == [("Money sent to Isaac Kasikila", 50.0)]
+    assert result.status == "verified", result.warnings
+
+
+def test_transfer_with_amount_first():
+    text = "You have sent K120.00 to Mary Banda 0977123456. Txn. ID : MP261009.0815.A10001. Your balance is K60.00"
+    result = validate(model_reading(total=120.0), ocr_text=text, today=TODAY)
+    r = result.receipt
+    assert (r.recipient, r.recipient_phone, r.total) == ("Mary Banda", "0977123456", 120.0)
+    assert (r.date, r.time) == ("2026-10-09", "08:15")
 
 
 def test_earlier_message_date_and_time_from_id_not_from_the_screen_clock():
@@ -86,3 +114,11 @@ def test_shop_receipt_paid_with_airtel_money_is_not_a_message():
 def test_ordinary_receipts_are_not_messages():
     assert detect("SUNRISE BAKERY\n08/10/2026\nTOTAL 88.00\nPaid by CASH") is None
     assert detect(None) is None
+
+
+def test_unrecognised_wording_with_two_amounts_is_flagged_not_trusted():
+    # Lines in a scrambled order: the payment phrase is broken, so the amount cannot be told from the balance.
+    text = ("ZMW 2.22 Your Airtel Money balance is NA of ZMW 10.00 is successful. Payment to AMMOBILE Account "
+            "Txn.ID:MP261009.1607.J57092.")
+    result = validate(model_reading(total=2.22), ocr_text=text, today=TODAY)
+    assert "AMOUNT_UNCLEAR" in result.codes and result.status == "needs_review"
